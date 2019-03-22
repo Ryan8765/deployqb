@@ -62,12 +62,16 @@ const run = async () => {
             repositoryId,
             conf: salt,
             filesConf: [
-                [
-                    "filenameOne", "pathToFileOne"
-                ],
-                [
-                    "filenameTwo", "pathToFileTwo"
-                ]
+                {
+                    filename: "exampleFileName.js", 
+                    path: "./example/"
+                },
+                {
+                    filename: "exampleFileName.css",
+                    path: "./examplefolder/subfolder/",
+                    dependancies: [1, 3], 
+                    isIndex: false
+                }
             ]
         };
 
@@ -95,7 +99,7 @@ const run = async () => {
 
         console.log(chalk.green('\n A qbcli.json file has been created in the root of your project directory.  Please update this file to include all files that you need to deploy to QB.'));
 
-    //if running the deploy
+    //if running the production or development deploy option
     } else if ( args._.includes('dev') || args._.includes('prod') ) {
 
         //make sure user is running this from the root of their react directory
@@ -118,90 +122,41 @@ const run = async () => {
             console.log(chalk.red('Project may never have been initialized - please run qbdeploy init.'));
             return;
         }
-
-
-        //get filenames in the build folder
-        const buildCSSFileNames = files.getFilesFromDirectory('./build/static/css');
-        const buildJSFileNames = files.getFilesFromDirectory('./build/static/js');
-
-
-
-        // //concat filenames and return only filenames without .map
-        // const fileNamesInBuild = buildCSSFileNames.concat(buildJSFileNames).filter((filenames)=>{
-        //     return !filenames.includes('.map');
-        // });
-
-        // if( !fileNamesInBuild ) {
-        //     console.log(chalk.red('You may have installed the qbdeploy in the wrong directory.  Please reinstall in the top level directory of your React application.'));
-        //     return;
-        // }
-
-       
-
-        //get filenames in the build folder
-        // const cssFileName = helpers.getFileNameFromExt_h(fileNamesInBuild, '.css');
-        // const jsFileName = helpers.getFileNameFromExt_h(fileNamesInBuild, '.js');
-
-        // if( !cssFileName || !jsFileName ) {
-        //     console.log(chalk.red('Make sure you have run npm run build for your React application'));
-        //     return;
-        // }
-
-        // //create the filenames to be used for QB.
-        // var qbCSSFileName = null;
-        // var qbJSFileName = null;
         
+        //get prefix for files
+        var prefix = null;
+        var { customPrefix } = configs;
+        if (args._.includes('prod') ) {
+            prefix = helpers.prefixGenerator(customPrefix, extensionPrefix, extensionPrefixDev, true, repositoryId);
+        } else {
+            prefix = helpers.prefixGenerator(customPrefix, extensionPrefix, extensionPrefixDev, false, repositoryId);
+        }
 
 
         //get file contents from the build folder
         try{
+
             String.prototype.replaceAll = function (search, replacement) {
                 var target = this;
                 return target.replace(new RegExp(search, 'g'), replacement);
             };
-            // var cssFileContents = files.getFileContents(`./build/static/css/${cssFileName}`);
-            // var jsFileContents = files.getFileContents(`./build/static/js/${jsFileName}`);
-            // //make sure no CDATA's are contained in the jsFIleContents - if there is modify it so the cdata is replaced
-            // jsFileContents = jsFileContents.replaceAll("]]>", "]]]]><![CDATA[>");
-            var arrayOfFileContents = helpers.getAllFileContents(filesConf, files.getFileContents, String.replaceAll);
+
+            //gets an array of file contents.  Each item in the array ahs filename, and filecontent.
+            var arrayOfFileContents = helpers.getAllFileContents(filesConf, files.getFileContents, String.replaceAll, prefix);
             if( !arrayOfFileContents ) {
                 console.log(chalk.red('Please check your qbcli.json in the root of your project. Make sure you have mapped the correct path to all of the files you are trying to deploy.  Also check all filenames match what is in those directories'));
             }
 
 
-            var { customPrefix } = configs;
-
-            //if there is a customprefix present, use that instead of "MCF_" & "MCF_d_"
-            if (customPrefix) {
-                extensionPrefixDev = `${customPrefix}_d_`;
-            } 
-
             //add the appopriate extension prefix to each file depending on whether it is dev/prod deployment.
-            if (args._.includes('prod')) {
-                extensionPrefix = `${extensionPrefix}${repositoryId}_`;
-                arrayOfFileContents = arrayOfFileContents.map((item)=>{
-                    const [fileName, fileContents] = item;
-                    return [`${extensionPrefix}${fileName}`, fileContents];
-                });
-            } else if (args._.includes('dev')) {
-                //if there is a customprefix present, use that instead of  "MCF_d_<repo>"
-                if (customPrefix) {
-                    extensionPrefixDev = `${customPrefix}_`;
-                }  else {
-                    extensionPrefixDev = `${extensionPrefixDev}${repositoryId}`;
-                }
-                arrayOfFileContents = arrayOfFileContents.map((item) => {
-                    const [fileName, fileContents] = item;
-                    return [`${extensionPrefixDev}${fileName}`, fileContents];
-                });
-            } else {
-                console.log(chalk.green('Please specify dev or prod deployment.'));
-                return;
-            }
+            arrayOfFileContents = arrayOfFileContents.map((item)=>{
+                const [fileName, fileContents] = item;
+                return [`${prefix}${fileName}`, fileContents];
+            });
 
         } catch(err) {
             console.log(err);
-            console.log(chalk.red('Files are not present in build folder.'));
+            console.log(chalk.red('\nFiles are not present.  Make sure you have listed the correct paths in your qbcli.json'));
             return;
         }
         
@@ -235,6 +190,12 @@ const run = async () => {
             status.stop();
             console.log(chalk.red(`\nAPI call failure - files weren\'t deployed successfully. Check your username and usertoken - run qbdeploy init again to reconfigure those values. \n\nQB response: ${err.response.statusText}`));
         });
+    } else if (args._.includes('ldev')) {
+        //get repo ID and files to push to prod
+        const { launchDevPageId } = files.readJSONFile(`./${qbCLIConfName}`);
+        //get configs stored from qbcli install
+        const configs = configurationFile.get(repositoryId);
+        var { dbid, realm } = configs;
     }
   
 }
