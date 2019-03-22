@@ -130,6 +130,7 @@ const run = async () => {
         var prefix = null;
         var { customPrefix } = configs;
         if (args._.includes('prod') ) {
+            //confirm deployment to production
             const confirmation = await userConfirmation.getInput();
             if (confirmation.answer === "yes" ) {
                 prefix = helpers.prefixGenerator(customPrefix, extensionPrefix, extensionPrefixDev, true, repositoryId);
@@ -143,7 +144,6 @@ const run = async () => {
 
         //get file contents from the build folder
         try{
-
             String.prototype.replaceAll = function (search, replacement) {
                 var target = this;
                 return target.replace(new RegExp(search, 'g'), replacement);
@@ -155,13 +155,11 @@ const run = async () => {
                 console.log(chalk.red('Please check your qbcli.json in the root of your project. Make sure you have mapped the correct path to all of the files you are trying to deploy.  Also check all filenames match what is in those directories'));
             }
 
-
             //add the appopriate extension prefix to each file depending on whether it is dev/prod deployment.
             arrayOfFileContents = arrayOfFileContents.map((item)=>{
                 const [fileName, fileContents] = item;
                 return [`${prefix}${fileName}`, fileContents];
             });
-
         } catch(err) {
             console.log(err);
             console.log(chalk.red('\nFiles are not present.  Make sure you have listed the correct paths in your qbcli.json'));
