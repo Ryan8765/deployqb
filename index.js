@@ -3,6 +3,8 @@
 //npm
 const clear = require('clear');
 const userInput  = require('./lib/userInput');
+const userConfirmation = require('./lib/userInputConfirmation');
+
 const Configstore = require('configstore');
 const pkg = require('./package.json');
 const CLI = require ('clui');
@@ -14,6 +16,7 @@ const cryptoRandomString = require('crypto-random-string');
 const fs = require('fs');
 const parse = require('parse-gitignore');
 const path = require('path');
+const opn = require('opn');
 
 
 //custom scripts
@@ -127,7 +130,12 @@ const run = async () => {
         var prefix = null;
         var { customPrefix } = configs;
         if (args._.includes('prod') ) {
-            prefix = helpers.prefixGenerator(customPrefix, extensionPrefix, extensionPrefixDev, true, repositoryId);
+            const confirmation = await userConfirmation.getInput();
+            if (confirmation.answer === "yes" ) {
+                prefix = helpers.prefixGenerator(customPrefix, extensionPrefix, extensionPrefixDev, true, repositoryId);
+            } else {
+                return;
+            }
         } else {
             prefix = helpers.prefixGenerator(customPrefix, extensionPrefix, extensionPrefixDev, false, repositoryId);
         }
@@ -192,10 +200,20 @@ const run = async () => {
         });
     } else if (args._.includes('ldev')) {
         //get repo ID and files to push to prod
-        const { launchDevPageId } = files.readJSONFile(`./${qbCLIConfName}`);
+        const { launchDevPageId, repositoryId } = files.readJSONFile(`./${qbCLIConfName}`);
         //get configs stored from qbcli install
         const configs = configurationFile.get(repositoryId);
         var { dbid, realm } = configs;
+        //launch the webpage
+        opn(`https://${realm}.quickbase.com/db/${dbid}?a=dbpage&pageID=${launchDevPageId}`);
+    } else if (args._.includes('lprod')) {
+        //get repo ID and files to push to prod
+        const { launchProdPageId, repositoryId } = files.readJSONFile(`./${qbCLIConfName}`);
+        //get configs stored from qbcli install
+        const configs = configurationFile.get(repositoryId);
+        var { dbid, realm } = configs;
+        //launch the webpage
+        opn(`https://${realm}.quickbase.com/db/${dbid}?a=dbpage&pageID=${launchProdPageId}`);
     }
   
 }
