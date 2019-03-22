@@ -173,17 +173,23 @@ const run = async () => {
 
             //if there is a customprefix present, use that instead of "MCF_" & "MCF_d_"
             if (customPrefix) {
-                extensionPrefix = `${customPrefix}_`;
                 extensionPrefixDev = `${customPrefix}_d_`;
-            }
+            } 
 
             //add the appopriate extension prefix to each file depending on whether it is dev/prod deployment.
             if (args._.includes('prod')) {
-               arrayOfFileContents = arrayOfFileContents.map((item)=>{
+                extensionPrefix = `${extensionPrefix}${repositoryId}_`;
+                arrayOfFileContents = arrayOfFileContents.map((item)=>{
                     const [fileName, fileContents] = item;
                     return [`${extensionPrefix}${fileName}`, fileContents];
-               });
+                });
             } else if (args._.includes('dev')) {
+                //if there is a customprefix present, use that instead of  "MCF_d_<repo>"
+                if (customPrefix) {
+                    extensionPrefixDev = `${customPrefix}_`;
+                }  else {
+                    extensionPrefixDev = `${extensionPrefixDev}${repositoryId}`;
+                }
                 arrayOfFileContents = arrayOfFileContents.map((item) => {
                     const [fileName, fileContents] = item;
                     return [`${extensionPrefixDev}${fileName}`, fileContents];
@@ -224,11 +230,10 @@ const run = async () => {
         //api calls
         Promise.all(allPromises).then((res)=>{
             status.stop();
-            console.log(chalk.green('Deployment Successful!'));
+            console.log(chalk.green('\nFiles deployed successfully!!'));
         }).catch((err)=>{
-            // console.log(err);
             status.stop();
-            console.log(chalk.red('API call failure.  All files weren\'t deployed successfully'));
+            console.log(chalk.red(`\nAPI call failure - files weren\'t deployed successfully. Check your username and usertoken - run qbdeploy init again to reconfigure those values. \n\nQB response: ${err.response.statusText}`));
         });
     }
   
