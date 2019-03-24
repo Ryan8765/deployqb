@@ -2,9 +2,6 @@
 
 //npm
 const clear = require('clear');
-const userInput  = require('./lib/userInput');
-const userConfirmation = require('./lib/userInputConfirmation');
-
 const Configstore = require('configstore');
 const pkg = require('./package.json');
 const CLI = require ('clui');
@@ -24,6 +21,9 @@ const helpers = require('./lib/helpers');
 const qb = require('./lib/qb');
 const alert = require('./lib/alerts');
 const qbcliTemplate = require('./lib/qbcliTemplate');
+const userInput = require('./lib/userInput');
+const userConfirmation = require('./lib/userInputConfirmation');
+const modifyPrefixInput = require('./lib/userInputModifyPrefix');
 
 //init configstore
 const configurationFile = new Configstore(pkg.name);
@@ -127,7 +127,7 @@ const run = async () => {
             //gets an array of file contents.  Each item in the array ahs filename, and filecontent, and conditionally a "isIndexFile" boolean.
             var arrayOfFileContents = helpers.getAllFileContents(filesConf, files.getFileContents, prefix);
             if( !arrayOfFileContents || arrayOfFileContents.length < 1 ) {
-                alert.error('Please check your qbcli.json in the root of your project. Make sure you have mapped the correct path to all of the files you are trying to deploy.  Also check all filenames match what is in those directories');
+                alert.error('Please check your qbcli.json in the root of your project. Make sure you have mapped the correct path to all of the files you are trying to deploy.  Also check all filenames match what is in those directories - and that all files have content (this tool will not deploy blank files - add a comment in the file if you would like to deploy without code).');
                 return;
             }
 
@@ -142,7 +142,7 @@ const run = async () => {
             });
 
         } catch(err) {
-            alert.error('Please check your qbcli.json in the root of your project. Make sure you have mapped the correct path to all of the files you are trying to deploy.  Also check all filenames match what is in those directories');
+            alert.error('Please check your qbcli.json in the root of your project. Make sure you have mapped the correct path to all of the files you are trying to deploy.  Also check all filenames match what is in those directories and make sure those files have content (this tool will not deploy blank files - add a comment if you would like to deploy without code).');
             return;
         }
         
@@ -223,6 +223,22 @@ const run = async () => {
         console.log('prod:  Deploys your files to the production environment.');
         console.log('ldev:  Launch your development environment in Quick Base with your default browser.');
         console.log('lprod: Launch your production environment in Quick Base with your default browser.');
+    } else if (args._.includes('edevprefix')) {
+        const { repositoryId } = files.readJSONFile(`./${qbCLIConfName}`);
+        const configs = configurationFile.get(repositoryId);
+        console.log('\nYour current developer prefix is: ' + configs.customPrefix + '\n');
+        const input = await modifyPrefixInput.getInput();
+        configs.customPrefix = input.newPrefix;
+        configurationFile.set(repositoryId, configs);
+        alert.success('Your development prefix has been updated successfully.')
+    } else if (args._.includes('eprodprefix')) {
+        const { repositoryId } = files.readJSONFile(`./${qbCLIConfName}`);
+        const configs = configurationFile.get(repositoryId);
+        console.log('\nYour current production prefix is: ' + configs.customPrefixProduction + '\n');
+        const input = await modifyPrefixInput.getInput();
+        configs.customPrefixProduction = input.newPrefix;
+        configurationFile.set(repositoryId, configs);
+        alert.success('Your production prefix has been updated successfully.')
     }
   
 }
