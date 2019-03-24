@@ -1,14 +1,14 @@
 {
   "name": "deployqb",
-  "version": "1.0.13",
-  "description": "Simple Quick Base deployment tool for React",
+  "version": "1.0.0",
+  "description": "Deploy local files to Quick Base",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Ryan8765/qb-cli.git"
+    "url": "git+https://github.com/Ryan8765/deployqb.git"
   },
   "keywords": [
     "CLI"
@@ -16,9 +16,9 @@
   "author": "Ryan Haas",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/Ryan8765/qb-cli/issues"
+    "url": "https://github.com/Ryan8765/deployqb/issues"
   },
-  "homepage": "https://github.com/Ryan8765/qb-cli#readme",
+  "homepage": "https://github.com/Ryan8765/deployqb#readme",
   "dependencies": {
     "@octokit/rest": "^15.10.0",
     "axios": "^0.18.0",
