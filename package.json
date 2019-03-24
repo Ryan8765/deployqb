@@ -1,5 +1,5 @@
 {
-  "name": "qbdeploy",
+  "name": "deployqb",
   "version": "1.0.13",
   "description": "Simple Quick Base deployment tool for React",
   "main": "index.js",
@@ -41,6 +41,6 @@
     "touch": "^3.1.0"
   },
   "bin": {
-    "qbdeploy": "./index.js"
+    "deployqb": "./index.js"
   }
 }

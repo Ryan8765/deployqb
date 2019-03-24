@@ -10,11 +10,8 @@ const pkg = require('./package.json');
 const CLI = require ('clui');
 const Spinner = CLI.Spinner;
 const minimist = require('minimist');
-const chalk = require('chalk');
 const Cryptr = require('cryptr');
 const cryptoRandomString = require('crypto-random-string');
-const fs = require('fs');
-const parse = require('parse-gitignore');
 const path = require('path');
 const opn = require('opn');
 const xmlparser = require('fast-xml-parser');
@@ -25,14 +22,14 @@ const editJsonFile = require("edit-json-file");
 const files = require('./lib/files');
 const helpers = require('./lib/helpers');
 const qb = require('./lib/qb');
+const alert = require('./lib/alerts');
+const qbcliTemplate = require('./lib/qbcliTemplate');
 
 //init configstore
 const configurationFile = new Configstore(pkg.name);
 
 //configs
 const qbCLIConfName = 'qbcli.json';
-// var extensionPrefix = 'MCF_';
-// var extensionPrefixDev = 'MCF_d_';
 const gitIgnoreFileName = './.gitignore';
 
 
@@ -52,63 +49,48 @@ const run = async () => {
         const input = await userInput.getInput();
         const repositoryId = input.repositoryId;
         const salt = cryptoRandomString(25);
-
         const cryptr = new Cryptr(salt);
 
-        //save app & usertoken
+        //update app & usertoken
         input.apptoken = cryptr.encrypt(input.apptoken);
         input.usertoken = cryptr.encrypt(input.usertoken);
 
-        /*
-            Save repository ID to local config and everything else to local
-        */
-        const data = {
-            repositoryId,
-            conf: salt,
-            filesConf: [
-                {
-                    filename: "exampleFileName.js", 
-                    path: "./example/"
-                },
-                {
-                    filename: "exampleFileName.css",
-                    path: "./examplefolder/subfolder/",
-                    dependancies: [1, 3], 
-                    isIndex: false
-                }
-            ]
-        };
+        //create qbcli template object
+        const data = qbcliTemplate(repositoryId, salt);
+    
 
-        //save the repository ID to local JSON file
-        files.saveJSONToFile(`${qbCLIConfName}`, data);
-        //save to local
+        //create qbcli.json file
+        try {
+            files.saveJSONToFile(`${qbCLIConfName}`, data);
+        } catch (error) {
+            alert.error(error);
+            return;
+        }
+        
+
+        //save qb db configs
         configurationFile.set(repositoryId, input);
 
-        /*
-            Update .gitignore if present to make sure it excludes qbcli.json
-        */
+
+        //make sure git ignore includes qbcli.json
         var pathToGitignore = path.join(__dirname, gitIgnoreFileName);
-        if (files.fileFolderExists(pathToGitignore)) {
-            //gets all contents of gitignore
-            const gitIgnoreFilesArray = parse(fs.readFileSync(pathToGitignore));
 
-            //only append if the qbcli.json isn't alrady listed
-            if ( gitIgnoreFilesArray.indexOf(`${qbCLIConfName}`) < 0 ) {
-                var writeStream = fs.createWriteStream(pathToGitignore, { 'flags': 'a' });
-                // use {'flags': 'a'} to append and {'flags': 'w'} to erase and write a new file
-                writeStream.write(`\n${qbCLIConfName}`);
-                writeStream.end();
-            }
-        } 
+        try {
+            files.updateGitIgnore(pathToGitignore, qbCLIConfName);
+        } catch (error) {
+            alert.warning('Not able to update .gitignore.  Please add the qbcli.json to your .gitignore if this project is initialized with git.');
+        }
 
-        console.log(chalk.green('\n A qbcli.json file has been created in the root of your project directory.  Please update this file to include all files that you need to deploy to QB.\n'));
+        alert.success('A qbcli.json file has been created in the root of your project directory.  Please update this file to include all files that you need to deploy to QB');    
 
     //if running the production or development deploy option
     } else if ( args._.includes('dev') || args._.includes('prod') ) {
 
+        const isProdDeployment = args._.includes('prod') ? true : false;
+
         //make sure user is running this from the root of their react directory
         if (!files.fileFolderExists(`${qbCLIConfName}`)) {
-            console.log(chalk.red('This qbdeploy command can only be run from the root of your directory.'));
+            alert.error('This deployqb command can only be run from the root of your directory.');
             return;
         }
 
@@ -116,47 +98,40 @@ const run = async () => {
         //get repo ID and files to push to prod
         const { repositoryId, filesConf } = files.readJSONFile(`./${qbCLIConfName}`);
         if (filesConf.length < 1) {
-            console.log(chalk.red('You must list files to deploy in your qbcli.json file.'));
+            alert.error('You must list files to deploy in your qbcli.json.')
             return;
         }
 
         //get configs stored from qbcli install
         const configs = configurationFile.get(repositoryId);
         if (!configs) {
-            console.log(chalk.red('Project may never have been initialized - please run qbdeploy init.'));
+            alert.error('Project may never have been initialized - please run deployqb init.');
             return;
         }
-        
-        //get prefix for files
-        var prefix = null;
-        var { customPrefix, customPrefixProduction } = configs;
-        if (args._.includes('prod') ) {
-            //confirm deployment to production
+
+        //if this is a prod deployment - double check the user wants to actually deploy
+        if( isProdDeployment ) {
             const confirmation = await userConfirmation.getInput();
-            if (confirmation.answer === "yes" ) {
-                prefix = helpers.prefixGenerator(customPrefix, customPrefixProduction, true, repositoryId);
-            } else {
+            if (confirmation.answer !== "yes") {
                 return;
             }
-        } else {
-            prefix = helpers.prefixGenerator(customPrefix, customPrefixProduction, false, repositoryId);
         }
-
+        
+        
+        //get prefix for files
+        const prefix = helpers.prefixGenerator(configs, isProdDeployment, repositoryId);
+      
 
         //get file contents from the build folder
         try{
-            String.prototype.replaceAll = function (search, replacement) {
-                var target = this;
-                return target.replace(new RegExp(search, 'g'), replacement);
-            };
-
             //gets an array of file contents.  Each item in the array ahs filename, and filecontent, and conditionally a "isIndexFile" boolean.
-            var arrayOfFileContents = helpers.getAllFileContents(filesConf, files.getFileContents, String.replaceAll, prefix);
-            if( !arrayOfFileContents ) {
-                console.log(chalk.red('Please check your qbcli.json in the root of your project. Make sure you have mapped the correct path to all of the files you are trying to deploy.  Also check all filenames match what is in those directories'));
+            var arrayOfFileContents = helpers.getAllFileContents(filesConf, files.getFileContents, prefix);
+            if( !arrayOfFileContents || arrayOfFileContents.length < 1 ) {
+                alert.error('Please check your qbcli.json in the root of your project. Make sure you have mapped the correct path to all of the files you are trying to deploy.  Also check all filenames match what is in those directories');
+                return;
             }
 
-            //add the appopriate extension prefix to each file depending on whether it is dev/prod deployment.
+            //add the appopriate extension prefix to each file depending on whether it is dev/prod deployment.  IF an index file has been listed, set the indexFileName below.
             var indexFileName = null;
             arrayOfFileContents = arrayOfFileContents.map((item)=>{
                 const [fileName, fileContents, isIndexFile] = item;
@@ -167,19 +142,18 @@ const run = async () => {
             });
 
         } catch(err) {
-            console.log(chalk.red('\nFiles are not present.  Make sure you have listed the correct paths in your qbcli.json'));
+            alert.error('Please check your qbcli.json in the root of your project. Make sure you have mapped the correct path to all of the files you are trying to deploy.  Also check all filenames match what is in those directories');
             return;
         }
         
-        var { dbid, realm, apptoken, usertoken } = configs;
 
         //get description
         const { conf } = files.readJSONFile(`./${qbCLIConfName}`);
         const cryptr = new Cryptr(conf);
 
         //decrypt usertoken and password
-        usertoken = cryptr.decrypt(usertoken);
-        apptoken = cryptr.decrypt(apptoken);
+        configs.usertoken = cryptr.decrypt(configs.usertoken);
+        configs.apptoken = cryptr.decrypt(configs.apptoken);
 
         /*
             Add files to QB
@@ -189,12 +163,12 @@ const run = async () => {
         const status = new Spinner('Processing request, please wait...');
         status.start();
 
-        var allPromises = helpers.generateAllAPICallPromises(dbid, realm, usertoken, apptoken, arrayOfFileContents, qb.addUpdateDbPage);
+        //get all promises for API calls.
+        var allPromises = helpers.generateAllAPICallPromises(configs, arrayOfFileContents, qb.addUpdateDbPage);
 
 
         //api calls
         Promise.all(allPromises).then((res)=>{
-            // console.log(res[0].config.data);
             //loop through the responses to set the appropriate dbpage id value for dev/production in the qbcli.json
             res.forEach((i)=>{
                 if (i.config && indexFileName && i.config.data.indexOf(indexFileName) >= 0) {
@@ -213,16 +187,16 @@ const run = async () => {
             });
 
             status.stop();
-            console.log(chalk.green('\nFiles deployed successfully!!\n'));
+            alert.success('Files deployed successfully!')
         }).catch((err)=>{
             status.stop();
-            console.log(chalk.red(`\nAPI call failure - files weren\'t deployed successfully. Check your username and usertoken - run qbdeploy init again to reconfigure those values. \n\nQB response: ${err.response.statusText}`));
+            alert.error(`API call failure - files weren\'t deployed successfully. Check your application token and user token.  You can run deployqb init again to reconfigure those values.  Note, running deployqb init will reconfigure your "files" in your qbcli.json file.  Make a copy of these values before re-running deployqb init. \n\nQB response: ${err.response.statusText}`);
         });
     } else if (args._.includes('ldev')) {
         //get repo ID and files to push to prod
         const { launchDevPageId, repositoryId } = files.readJSONFile(`./${qbCLIConfName}`);
         if( !launchDevPageId ) {
-            console.log(chalk.red('\nYou must first deploy the development files to the Quick Base application before you can use this command.  Try running "qbdeploy dev" first.'));
+            alert.error('You must first deploy the development files to the Quick Base application before you can use this command.Try running "qbdeploy dev" first.');
             return;
         }
         //get configs stored from qbcli install
@@ -234,7 +208,7 @@ const run = async () => {
         //get repo ID and files to push to prod
         const { launchProdPageId, repositoryId } = files.readJSONFile(`./${qbCLIConfName}`);
         if (!launchProdPageId) {
-            console.log(chalk.red('\nYou must first deploy the production files to the Quick Base application before you can use this command.  Try running "qbdeploy prod" first.'));
+            alert.error('You must first deploy the production files to the Quick Base application before you can use this command.  Try running "deployqb prod" first.');
             return;
         }
         //get configs stored from qbcli install
@@ -242,6 +216,13 @@ const run = async () => {
         const { dbid, realm } = configs;
         //launch the webpage
         opn(`https://${realm}.quickbase.com/db/${dbid}?a=dbpage&pageID=${launchProdPageId}`);
+    } else if (args._.includes('help')) {
+        alert.success('deployqb commands');
+        console.log('init:  Initializes this project.  This command must be run in order to utilize the other deployqb commands');
+        console.log('dev:   Deploys your files to the development environment.');
+        console.log('prod:  Deploys your files to the production environment.');
+        console.log('ldev:  Launch your development environment in Quick Base with your default browser.');
+        console.log('lprod: Launch your production environment in Quick Base with your default browser.');
     }
   
 }
