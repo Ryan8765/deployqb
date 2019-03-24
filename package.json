@@ -28,6 +28,8 @@
     "configstore": "^4.0.0",
     "crypto-random-string": "^1.0.0",
     "cryptr": "^4.0.0",
+    "edit-json-file": "^1.2.1",
+    "fast-xml-parser": "^3.12.16",
     "figlet": "^1.2.0",
     "inquirer": "^6.1.0",
     "lodash": "^4.17.10",
