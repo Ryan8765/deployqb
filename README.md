@@ -6,7 +6,9 @@ deployqb attempts to solve the copy/paste problem when trying to deploy your fil
  - **deployqb dev** - Run this to deploy your code to Quick Base for the UAT environment. 
  - **deployqb prod** - Run this to deploy your code to Quick Base for the production environment. 
  - **deployqb ldev** - Launch the UAT environment in your default browser. 
- - **deployqb lprod** - Launch the Production environment in your default browser. 
+ - **deployqb lprod** - Launch the Production environment in your default browser.
+ - **deployqb edevprefix** - Edit UAT environment prefix.
+ - **deployqb eprodprefix** - Edit UAT environment prefix.
  - **deployqb help** - Get the available commands.
 
 ## qbcli.json Setup
@@ -23,7 +25,7 @@ After running "deployqb init" - you will need to update your qbcli.json file tha
 			{
 				"filename": "index.html",
 				"path": "./build/",
-				"dependancies": [
+				"dependencies": [
 					0
 				],
 				"isIndexFile": true
@@ -43,7 +45,7 @@ This tool allows you to add dependencies to Quick Base, and the tool will automa
 	<head>
 		<meta  charset="utf-8">
 		<meta  name="viewport"  content="width=device-width,initial-scale=1,shrink-to-fit=no">
-		<title>MCF React Demo</title>
+		<title>Demo</title>
 		<link  href="/db/<yourdbid>?a=dbpage&pagename=main.7dff319d.css"  rel="stylesheet">
 	</head>
 	<body>
