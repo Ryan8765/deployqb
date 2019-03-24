@@ -51,7 +51,6 @@ const run = async () => {
 
         const input = await userInput.getInput();
         const repositoryId = input.repositoryId;
-        const customPrefix = input.customPrefix;
         const salt = cryptoRandomString(25);
 
         const cryptr = new Cryptr(salt);
@@ -116,7 +115,7 @@ const run = async () => {
 
         //get repo ID and files to push to prod
         const { repositoryId, filesConf } = files.readJSONFile(`./${qbCLIConfName}`);
-        if (files.length < 1) {
+        if (filesConf.length < 1) {
             console.log(chalk.red('You must list files to deploy in your qbcli.json file.'));
             return;
         }
