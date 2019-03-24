@@ -1,3 +1,8 @@
+## Install
+
+    npm install -g deployqb
+
+## Overview
 deployqb attempts to solve the copy/paste problem when trying to deploy your files to Quick Base.  This allows you to work locally on your files in your favorite text editor, then deploy those files to Quick Base using this CLI.
 
 **Available Commands**
