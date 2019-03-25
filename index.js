@@ -175,14 +175,11 @@ const run = async () => {
                     var resObj = xmlparser.parse(i.data);
                     var pageID = resObj.qdbapi.pageID;
                     if ( args._.includes('prod') ) {
-                        console.log('hello');
-                        console.log(`${__dirname}/${qbCLIConfName}`);
-                        let file = editJsonFile(`${__dirname}/${qbCLIConfName}`);
+                        let file = editJsonFile(`./${qbCLIConfName}`);
                         file.set("launchProdPageId", pageID);
                         file.save();
                     } else {
                         try {
-                            console.log(`./${qbCLIConfName}`);
                             let file = editJsonFile(`./${qbCLIConfName}`);
                             file.set("launchDevPageId", pageID);
                             file.save();
