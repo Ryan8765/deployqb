@@ -181,9 +181,14 @@ const run = async () => {
                         file.set("launchProdPageId", pageID);
                         file.save();
                     } else {
-                        let file = editJsonFile(`${__dirname}/${qbCLIConfName}`);
-                        file.set("launchDevPageId", pageID);
-                        file.save();
+                        try {
+                            let file = editJsonFile(`${__dirname}\\${qbCLIConfName}`);
+                            file.set("launchDevPageId", pageID);
+                            file.save();
+                        } catch (error) {
+                            alert.error(`There was an error adding the pageID.  Note, your application still was deployed, but you may have trouble with ldev. \n ${error}`)
+                        }
+                        
                     }
                 }
             });
@@ -198,7 +203,7 @@ const run = async () => {
         //get repo ID and files to push to prod
         const { launchDevPageId, repositoryId } = files.readJSONFile(`./${qbCLIConfName}`);
         if( !launchDevPageId ) {
-            alert.error('You must first deploy the development files to the Quick Base application before you can use this command.Try running "qbdeploy dev" first.');
+            alert.error('You must first deploy the development files to the Quick Base application before you can use this command.Try running "deployqb dev" first.');
             return;
         }
         //get configs stored from qbcli install
