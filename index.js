@@ -96,7 +96,7 @@ const run = async () => {
 
 
         //get repo ID and files to push to prod
-        const { repositoryId, filesConf } = files.readJSONFile(`./${qbCLIConfName}`);
+        const { repositoryId, filesConf } = files.readJSONFile(`${process.cwd()}\\${qbCLIConfName}`);
         if (filesConf.length < 1) {
             alert.error('You must list files to deploy in your qbcli.json.')
             return;
@@ -148,7 +148,7 @@ const run = async () => {
         
 
         //get description
-        const { conf } = files.readJSONFile(`./${qbCLIConfName}`);
+        const { conf } = files.readJSONFile(`${process.cwd()}\\${qbCLIConfName}`);
         const cryptr = new Cryptr(conf);
 
         //decrypt usertoken and password
@@ -175,12 +175,12 @@ const run = async () => {
                     var resObj = xmlparser.parse(i.data);
                     var pageID = resObj.qdbapi.pageID;
                     if ( args._.includes('prod') ) {
-                        let file = editJsonFile(`./${qbCLIConfName}`);
+                        let file = editJsonFile(`${process.cwd()}\\${qbCLIConfName}`);
                         file.set("launchProdPageId", pageID);
                         file.save();
                     } else {
                         try {
-                            let file = editJsonFile(`./${qbCLIConfName}`);
+                            let file = editJsonFile(`${process.cwd()}\\${qbCLIConfName}`);
                             file.set("launchDevPageId", pageID);
                             file.save();
                         } catch (error) {
@@ -199,7 +199,7 @@ const run = async () => {
         });
     } else if (args._.includes('ldev')) {
         //get repo ID and files to push to prod
-        const { launchDevPageId, repositoryId } = files.readJSONFile(`./${qbCLIConfName}`);
+        const { launchDevPageId, repositoryId } = files.readJSONFile(`${process.cwd()}\\${qbCLIConfName}`);
         if( !launchDevPageId ) {
             alert.error('You must first deploy the development files to the Quick Base application before you can use this command.Try running "deployqb dev" first.');
             return;
@@ -211,7 +211,7 @@ const run = async () => {
         opn(`https://${realm}.quickbase.com/db/${dbid}?a=dbpage&pageID=${launchDevPageId}`);
     } else if (args._.includes('lprod')) {
         //get repo ID and files to push to prod
-        const { launchProdPageId, repositoryId } = files.readJSONFile(`./${qbCLIConfName}`);
+        const { launchProdPageId, repositoryId } = files.readJSONFile(`${process.cwd()}\\${qbCLIConfName}`);
         if (!launchProdPageId) {
             alert.error('You must first deploy the production files to the Quick Base application before you can use this command.  Try running "deployqb prod" first.');
             return;
@@ -229,7 +229,7 @@ const run = async () => {
         console.log('ldev:  Launch your development environment in Quick Base with your default browser.');
         console.log('lprod: Launch your production environment in Quick Base with your default browser.');
     } else if (args._.includes('edevprefix')) {
-        const { repositoryId } = files.readJSONFile(`./${qbCLIConfName}`);
+        const { repositoryId } = files.readJSONFile(`${process.cwd()}\\${qbCLIConfName}`);
         const configs = configurationFile.get(repositoryId);
         console.log('\nYour current developer prefix is: ' + configs.customPrefix + '\n');
         const input = await modifyPrefixInput.getInput();
@@ -237,7 +237,7 @@ const run = async () => {
         configurationFile.set(repositoryId, configs);
         alert.success('Your development prefix has been updated successfully.')
     } else if (args._.includes('eprodprefix')) {
-        const { repositoryId } = files.readJSONFile(`./${qbCLIConfName}`);
+        const { repositoryId } = files.readJSONFile(`${process.cwd()}\\${qbCLIConfName}`);
         const configs = configurationFile.get(repositoryId);
         console.log('\nYour current production prefix is: ' + configs.customPrefixProduction + '\n');
         const input = await modifyPrefixInput.getInput();
