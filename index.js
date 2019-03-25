@@ -169,7 +169,7 @@ const run = async () => {
 
         //api calls
         Promise.all(allPromises).then((res)=>{
-            //loop through the responses to set the appropriate dbpage id value for dev/production in the qbcli.json
+            //loop through the responses to set the appropriate dbpage id value for dev/production in the qbcli.json.
             res.forEach((i)=>{
                 if (i.config && indexFileName && i.config.data.indexOf(indexFileName) >= 0) {
                     var resObj = xmlparser.parse(i.data);
