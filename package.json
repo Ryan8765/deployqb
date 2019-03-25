@@ -1,6 +1,6 @@
 {
   "name": "deployqb",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "Deploy local files to Quick Base",
   "main": "index.js",
   "scripts": {

@@ -182,6 +182,7 @@ const run = async () => {
                         file.save();
                     } else {
                         try {
+                            console.log(`${__dirname}\\${qbCLIConfName}`);
                             let file = editJsonFile(`${__dirname}\\${qbCLIConfName}`);
                             file.set("launchDevPageId", pageID);
                             file.save();
