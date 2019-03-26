@@ -244,6 +244,22 @@ const run = async () => {
         configs.customPrefixProduction = input.newPrefix;
         configurationFile.set(repositoryId, configs);
         alert.success('Your production prefix has been updated successfully.')
+    } else if (args._.includes('genlinks')) {
+        const { repositoryId, filesConf } = files.readJSONFile(`${process.cwd()}\\${qbCLIConfName}`);
+        //get configs stored from qbcli install
+        const configs = configurationFile.get(repositoryId);
+        
+        // console.log(filesConf);
+        if( filesConf && filesConf.length > 0 ) {
+            alert.warning('\nPOSSIBLE DEPENDENCY LINKS BASED ON YOUR QBCLI.jSON CONFIGS:');
+            filesConf.forEach((file)=>{
+                alert.soft('__________________________________________');
+                const { filename } = file;
+                console.log(filename + ':\n');
+                console.log(`\t/db/${configs.dbid}?a=dbpage&pagename=${filename}`);
+                alert.soft('__________________________________________');
+            });
+        }
     }
   
 }
