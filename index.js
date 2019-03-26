@@ -223,11 +223,15 @@ const run = async () => {
         opn(`https://${realm}.quickbase.com/db/${dbid}?a=dbpage&pageID=${launchProdPageId}`);
     } else if (args._.includes('help')) {
         alert.success('deployqb commands');
-        console.log('init:  Initializes this project.  This command must be run in order to utilize the other deployqb commands');
-        console.log('dev:   Deploys your files to the development environment.');
-        console.log('prod:  Deploys your files to the production environment.');
-        console.log('ldev:  Launch your development environment in Quick Base with your default browser.');
-        console.log('lprod: Launch your production environment in Quick Base with your default browser.');
+        console.log('init:        Initializes this project.');
+        console.log('dev:         Deploys your files to the development environment.');
+        console.log('prod:        Deploys your files to the production environment.');
+        console.log('ldev:        Launch your development environment in Quick Base with your default browser.');
+        console.log('lprod:       Launch your production environment in Quick Base with your default browser.');
+        console.log('edevprefix:  Edit UAT environment prefix.');
+        console.log('eprodprefix: Edit Production environment prefix.');
+        console.log('genlinks:    Displays a list of possible links for each file in your project.\n');
+
     } else if (args._.includes('edevprefix')) {
         const { repositoryId } = files.readJSONFile(`${process.cwd()}\\${qbCLIConfName}`);
         const configs = configurationFile.get(repositoryId);

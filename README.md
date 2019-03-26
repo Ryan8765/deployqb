@@ -14,6 +14,7 @@ deployqb attempts to solve the copy/paste problem when trying to deploy your fil
  - **deployqb lprod** - Launch the Production environment in your default browser.
  - **deployqb edevprefix** - Edit UAT environment prefix.
  - **deployqb eprodprefix** - Edit Production environment prefix.
+ - **deployqb genlinks** - Displays a list of possible links for each file in your project.
  - **deployqb help** - Get the available commands.
 
 ## qbcli.json Setup
@@ -64,7 +65,7 @@ You can see the following dependency:
 
 ```/db/<yourdbid>?a=dbpage&pagename=main.7dff319d.css```
 
-Notice the dependency is set up as if it was in Quick Base already and notice the name of the dependency **matches** the name in the qbcli.json above "main.7dff319d.css."  Dependencies in this tool assume you are linking to other dbpages (pagename=nameofyourdependency).  Note, **do not utilize** pageid when linking to your dependencies using this tool - or the system will not operate appropriately you must use pagename (pagename=main.css etc.). 
+Notice the dependency is set up as if it was in Quick Base already and notice the name of the dependency **matches** the name in the qbcli.json above "main.7dff319d.css."  Dependencies in this tool assume you are linking to other dbpages (pagename=nameofyourdependency).  Note, **do not utilize** pageid when linking to your dependencies using this tool - or the system will not operate appropriately you must use pagename (pagename=main.css etc.).  Use the command **"deployqb genlinks"** to see a list of possible links you can use for your dependencies. 
 
 
 
