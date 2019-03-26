@@ -13,7 +13,7 @@ deployqb attempts to solve the copy/paste problem when trying to deploy your fil
  - **deployqb ldev** - Launch the UAT environment in your default browser. 
  - **deployqb lprod** - Launch the Production environment in your default browser.
  - **deployqb edevprefix** - Edit UAT environment prefix.
- - **deployqb eprodprefix** - Edit UAT environment prefix.
+ - **deployqb eprodprefix** - Edit Production environment prefix.
  - **deployqb help** - Get the available commands.
 
 ## qbcli.json Setup
@@ -38,7 +38,9 @@ After running "deployqb init" - you will need to update your qbcli.json file tha
 		]
 	}
 
-The "**filesConf**" above holds all of the files to be deployed to Quick Base.  You must list your file name and the file path as shown above.  If a file depends on another, you can add an optional "dependencies" array.  In this array, add the index of the file that this particular file depends on.  For instance, in the above setup, "index.html" depends on "main.7dff319d.css."
+The "**filesConf**" above holds all of the files to be deployed to Quick Base.  You must list your file name and the file path as shown above.  The file path is the path from your qbcli.json (the root of your project) to your file of interest that needs to be deployed (this is the file path in your local project).  For instance, the "main.7dff319d.css" above is in the build/static/css/ folder locally.
+
+If a file depends on another, you can add an optional "dependencies" array.  In this array, add the index of the file that this particular file depends on.  For instance, in the above setup, "index.html" depends on "main.7dff319d.css."
 
 There is an additional flag **isIndexFile** you can add that will allow you to utilize the "**ldev**" and "**lprod**" commands.  You must set this to true for a single file above if you want to be able to launch the project from your command line.
 
