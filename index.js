@@ -198,6 +198,11 @@ const run = async () => {
             alert.error(`API call failure - files weren\'t deployed successfully. Check your application token and user token.  You can run deployqb init again to reconfigure those values.  Note, running deployqb init will reconfigure your "files" in your qbcli.json file.  Make a copy of these values before re-running deployqb init. \n\nQB response: ${err.response.statusText}`);
         });
     } else if (args._.includes('ldev')) {
+        //make sure user is running this from the root of their react directory
+        if (!files.fileFolderExists(`${qbCLIConfName}`)) {
+            alert.error('This deployqb command can only be run from the root of your directory.');
+            return;
+        }
         //get repo ID and files to push to prod
         const { launchDevPageId, repositoryId } = files.readJSONFile(`${process.cwd()}\\${qbCLIConfName}`);
         if( !launchDevPageId ) {
@@ -206,10 +211,19 @@ const run = async () => {
         }
         //get configs stored from qbcli install
         const configs = configurationFile.get(repositoryId);
+        if (!configs) {
+            alert.error('Project may never have been initialized - please run deployqb init.');
+            return;
+        }
         const { dbid, realm } = configs;
         //launch the webpage
         opn(`https://${realm}.quickbase.com/db/${dbid}?a=dbpage&pageID=${launchDevPageId}`);
     } else if (args._.includes('lprod')) {
+        //make sure user is running this from the root of their react directory
+        if (!files.fileFolderExists(`${qbCLIConfName}`)) {
+            alert.error('This deployqb command can only be run from the root of your directory.');
+            return;
+        }
         //get repo ID and files to push to prod
         const { launchProdPageId, repositoryId } = files.readJSONFile(`${process.cwd()}\\${qbCLIConfName}`);
         if (!launchProdPageId) {
@@ -218,6 +232,10 @@ const run = async () => {
         }
         //get configs stored from qbcli install
         const configs = configurationFile.get(repositoryId);
+        if (!configs) {
+            alert.error('Project may never have been initialized - please run deployqb init.');
+            return;
+        }
         const { dbid, realm } = configs;
         //launch the webpage
         opn(`https://${realm}.quickbase.com/db/${dbid}?a=dbpage&pageID=${launchProdPageId}`);
@@ -233,25 +251,53 @@ const run = async () => {
         console.log('genlinks:    Displays a list of possible links for each file in your project.\n');
 
     } else if (args._.includes('edevprefix')) {
+        //make sure user is running this from the root of their react directory
+        if (!files.fileFolderExists(`${qbCLIConfName}`)) {
+            alert.error('This deployqb command can only be run from the root of your directory.');
+            return;
+        }
         const { repositoryId } = files.readJSONFile(`${process.cwd()}\\${qbCLIConfName}`);
         const configs = configurationFile.get(repositoryId);
+        if (!configs) {
+            alert.error('Project may never have been initialized - please run deployqb init.');
+            return;
+        }
         console.log('\nYour current developer prefix is: ' + configs.customPrefix + '\n');
         const input = await modifyPrefixInput.getInput();
         configs.customPrefix = input.newPrefix;
         configurationFile.set(repositoryId, configs);
         alert.success('Your development prefix has been updated successfully.')
     } else if (args._.includes('eprodprefix')) {
+        //make sure user is running this from the root of their react directory
+        if (!files.fileFolderExists(`${qbCLIConfName}`)) {
+            alert.error('This deployqb command can only be run from the root of your directory.');
+            return;
+        }
         const { repositoryId } = files.readJSONFile(`${process.cwd()}\\${qbCLIConfName}`);
         const configs = configurationFile.get(repositoryId);
+
+        if (!configs) {
+            alert.error('Project may never have been initialized - please run deployqb init.');
+            return;
+        }
         console.log('\nYour current production prefix is: ' + configs.customPrefixProduction + '\n');
         const input = await modifyPrefixInput.getInput();
         configs.customPrefixProduction = input.newPrefix;
         configurationFile.set(repositoryId, configs);
         alert.success('Your production prefix has been updated successfully.')
     } else if (args._.includes('genlinks')) {
+        //make sure user is running this from the root of their react directory
+        if (!files.fileFolderExists(`${qbCLIConfName}`)) {
+            alert.error('This deployqb command can only be run from the root of your directory.');
+            return;
+        }
         const { repositoryId, filesConf } = files.readJSONFile(`${process.cwd()}\\${qbCLIConfName}`);
         //get configs stored from qbcli install
         const configs = configurationFile.get(repositoryId);
+        if (!configs) {
+            alert.error('Project may never have been initialized - please run deployqb init.');
+            return;
+        }
         
         // console.log(filesConf);
         if( filesConf && filesConf.length > 0 ) {
