@@ -1,6 +1,6 @@
 {
   "name": "deployqb",
-  "version": "1.0.9",
+  "version": "1.0.18",
   "description": "Deploy local files to Quick Base",
   "main": "index.js",
   "scripts": {
@@ -11,7 +11,7 @@
     "url": "git+https://github.com/Ryan8765/deployqb.git"
   },
   "keywords": [
-    "CLI"
+    "CLI", "Quick Base", "QuickBase", "dbpages", "deploy"
   ],
   "author": "Ryan Haas",
   "license": "ISC",

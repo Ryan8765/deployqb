@@ -106,7 +106,7 @@ const run = async () => {
 
 
         //get repo ID and files to push to prod
-        const { repositoryId, filesConf } = files.readJSONFile(`./${qbCLIConfName}`);
+        const { repositoryId, filesConf } = files.readJSONFile(`${process.cwd()}\\${qbCLIConfName}`);
         if (filesConf.length < 1) {
             alert.error('You must list files to deploy in your qbcli.json.')
             return;
@@ -159,7 +159,7 @@ const run = async () => {
         
 
         //get description
-        const { conf } = files.readJSONFile(`./${qbCLIConfName}`);
+        const { conf } = files.readJSONFile(`${process.cwd()}\\${qbCLIConfName}`);
         const cryptr = new Cryptr(conf);
 
         //decrypt usertoken and password
@@ -196,7 +196,7 @@ const run = async () => {
                         
                     } else if( deploymentType === 'dev' ) {
                         try {
-                            let file = editJsonFile(`./${qbCLIConfName}`);
+                            let file = editJsonFile(`${process.cwd()}\\${qbCLIConfName}`);
                             file.set("launchDevPageId", pageID);
                             file.save();
                         } catch (error) {
@@ -222,26 +222,44 @@ const run = async () => {
             alert.error(`API call failure - files weren\'t deployed successfully. Check your application token and user token.  You can run deployqb init again to reconfigure those values.  Note, running deployqb init will reconfigure your "files" in your qbcli.json file.  Make a copy of these values before re-running deployqb init. \n\nQB response: ${err.response.statusText}`);
         });
     } else if (args._.includes('ldev')) {
+        //make sure user is running this from the root of their react directory
+        if (!files.fileFolderExists(`${qbCLIConfName}`)) {
+            alert.error('This deployqb command can only be run from the root of your directory.');
+            return;
+        }
         //get repo ID and files to push to prod
-        const { launchDevPageId, repositoryId } = files.readJSONFile(`./${qbCLIConfName}`);
+        const { launchDevPageId, repositoryId } = files.readJSONFile(`${process.cwd()}\\${qbCLIConfName}`);
         if( !launchDevPageId ) {
             alert.error('You must first deploy the development files to the Quick Base application before you can use this command.Try running "deployqb dev" first.');
             return;
         }
         //get configs stored from qbcli install
         const configs = configurationFile.get(repositoryId);
+        if (!configs) {
+            alert.error('Project may never have been initialized - please run deployqb init.');
+            return;
+        }
         const { dbid, realm } = configs;
         //launch the webpage
         opn(`https://${realm}.quickbase.com/db/${dbid}?a=dbpage&pageID=${launchDevPageId}`);
     } else if (args._.includes('lprod')) {
+        //make sure user is running this from the root of their react directory
+        if (!files.fileFolderExists(`${qbCLIConfName}`)) {
+            alert.error('This deployqb command can only be run from the root of your directory.');
+            return;
+        }
         //get repo ID and files to push to prod
-        const { launchProdPageId, repositoryId } = files.readJSONFile(`./${qbCLIConfName}`);
+        const { launchProdPageId, repositoryId } = files.readJSONFile(`${process.cwd()}\\${qbCLIConfName}`);
         if (!launchProdPageId) {
             alert.error('You must first deploy the production files to the Quick Base application before you can use this command.  Try running "deployqb prod" first.');
             return;
         }
         //get configs stored from qbcli install
         const configs = configurationFile.get(repositoryId);
+        if (!configs) {
+            alert.error('Project may never have been initialized - please run deployqb init.');
+            return;
+        }
         const { dbid, realm } = configs;
         //launch the webpage
         opn(`https://${realm}.quickbase.com/db/${dbid}?a=dbpage&pageID=${launchProdPageId}`);
@@ -259,24 +277,51 @@ const run = async () => {
         opn(`https://${realm}.quickbase.com/db/${dbid}?a=dbpage&pageID=${launchFeatPageId}`);
     } else if (args._.includes('help')) {
         alert.success('deployqb commands');
-        console.log('init:  Initializes this project.  This command must be run in order to utilize the other deployqb commands');
-        console.log('dev:   Deploys your files to the development environment.');
-        console.log('prod:  Deploys your files to the production environment.');
-        console.log('ldev:  Launch your development environment in Quick Base with your default browser.');
-        console.log('lprod: Launch your production environment in Quick Base with your default browser.');
-        console.log('lfeat: Launch your feature environment in Quick Base with your default browser.');
+        console.log('init:        Initializes this project.');
+        console.log('feat:        Deploys your files to the feature environment.');
+        console.log('dev:         Deploys your files to the development environment.');
+        console.log('prod:        Deploys your files to the production environment.');
+        console.log('lfeat:       Open your feature environment in Quick Base with your default browser.');
+        console.log('ldev:        Open your development environment in Quick Base with your default browser.');
+        console.log('lprod:       Open your production environment in Quick Base with your default browser.');
+        console.log('efeatprefix: Edit Production environment prefix.');
+        console.log('edevprefix:  Edit Developer environment prefix.');
+        console.log('eprodprefix: Edit Production environment prefix.');
+        console.log('genlinks:    Displays a list of possible links for each file in your project.\n');
+
     } else if (args._.includes('edevprefix')) {
-        const { repositoryId } = files.readJSONFile(`./${qbCLIConfName}`);
+        //make sure user is running this from the root of their react directory
+        if (!files.fileFolderExists(`${qbCLIConfName}`)) {
+            alert.error('This deployqb command can only be run from the root of your directory.');
+            return;
+        }
+        const { repositoryId } = files.readJSONFile(`${process.cwd()}\\${qbCLIConfName}`);
         const configs = configurationFile.get(repositoryId);
-        console.log('\nYour current developer prefix is: ' + configs.customPrefix + '\n');
+        if (!configs) {
+            alert.error('Project may never have been initialized - please run deployqb init.');
+            return;
+        }
+        alert.warning('Your current developer prefix is: ' + configs.customPrefix);
         const input = await modifyPrefixInput.getInput();
         configs.customPrefix = input.newPrefix;
         configurationFile.set(repositoryId, configs);
         alert.success('Your development prefix has been updated successfully.')
     } else if (args._.includes('eprodprefix')) {
-        const { repositoryId } = files.readJSONFile(`./${qbCLIConfName}`);
+        //make sure user is running this from the root of their react directory
+        if (!files.fileFolderExists(`${qbCLIConfName}`)) {
+            alert.error('This deployqb command can only be run from the root of your directory.');
+            return;
+        }
+        const { repositoryId } = files.readJSONFile(`${process.cwd()}\\${qbCLIConfName}`);
         const configs = configurationFile.get(repositoryId);
-        console.log('\nYour current production prefix is: ' + configs.customPrefixProduction + '\n');
+
+        if (!configs) {
+            alert.error('Project may never have been initialized - please run deployqb init.');
+            return;
+        }
+
+        alert.warning('Your current production prefix is: ' + configs.customPrefixProduction);
+
         const input = await modifyPrefixInput.getInput();
         configs.customPrefixProduction = input.newPrefix;
         configurationFile.set(repositoryId, configs);
@@ -284,11 +329,37 @@ const run = async () => {
     } else if (args._.includes('efeatprefix')) {
         const { repositoryId } = files.readJSONFile(`./${qbCLIConfName}`);
         const configs = configurationFile.get(repositoryId);
-        console.log('\nYour current feature prefix is: ' + configs.customPrefixFeature + '\n');
+        alert.warning('Your current feature prefix is: ' + configs.customPrefixFeature);
+
         const input = await modifyPrefixInput.getInput();
         configs.customPrefixFeature = input.newPrefix;
         configurationFile.set(repositoryId, configs);
         alert.success('Your feature prefix has been updated successfully.')
+    } else if (args._.includes('genlinks')) {
+        //make sure user is running this from the root of their react directory
+        if (!files.fileFolderExists(`${qbCLIConfName}`)) {
+            alert.error('This deployqb command can only be run from the root of your directory.');
+            return;
+        }
+        const { repositoryId, filesConf } = files.readJSONFile(`${process.cwd()}\\${qbCLIConfName}`);
+        //get configs stored from qbcli install
+        const configs = configurationFile.get(repositoryId);
+        if (!configs) {
+            alert.error('Project may never have been initialized - please run deployqb init.');
+            return;
+        }
+        
+        // console.log(filesConf);
+        if( filesConf && filesConf.length > 0 ) {
+            alert.warning('\nPOSSIBLE DEPENDENCY LINKS BASED ON YOUR QBCLI.jSON CONFIGS:');
+            filesConf.forEach((file)=>{
+                alert.soft('__________________________________________');
+                const { filename } = file;
+                console.log(filename + ':\n');
+                console.log(`\t/db/${configs.dbid}?a=dbpage&pagename=${filename}`);
+                alert.soft('__________________________________________');
+            });
+        }
     }
   
 }
