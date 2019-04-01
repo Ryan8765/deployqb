@@ -96,7 +96,7 @@ Team Member 2 Feature Prefix - "modal"
 
 When team member 1 & team member 2 deploy to Quick Base they will overwrite each others work.
 
-## Environments/Deployment Types
+## Final Note
 DO NOT use this tool on public computers.  User tokens and application tokens are encrypted on the users machine, but you should never use this tool on a machine that others have access to.
 
 
