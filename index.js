@@ -84,9 +84,19 @@ const run = async () => {
         alert.success('A qbcli.json file has been created in the root of your project directory.  Please update this file to include all files that you need to deploy to QB');    
 
     //if running the production or development deploy option
-    } else if ( args._.includes('dev') || args._.includes('prod') ) {
+    } else if (args._.includes('dev') || args._.includes('prod') || args._.includes('feat') ) {
 
-        const isProdDeployment = args._.includes('prod') ? true : false;
+        //set the necessary deployment type
+        var deploymentType = null;
+        if (args._.includes('dev') ) {
+            deploymentType = 'dev';
+        } else if (args._.includes('prod') ) {
+            deploymentType = 'prod';
+        } else if (args._.includes('feat') ) {
+            deploymentType = 'feat';
+        }
+
+        //const isProdDeployment = args._.includes('prod') ? true : false;
 
         //make sure user is running this from the root of their react directory
         if (!files.fileFolderExists(`${qbCLIConfName}`)) {
@@ -109,9 +119,9 @@ const run = async () => {
             return;
         }
 
-        //if this is a prod deployment - double check the user wants to actually deploy
-        if( isProdDeployment ) {
-            const confirmation = await userConfirmation.getInput();
+        //if this is a prod/dev deployment - double check the user wants to actually deploy
+        if( deploymentType === 'prod' || deploymentType === 'dev' ) {
+            const confirmation = await userConfirmation.getInput( deploymentType );
             if (confirmation.answer !== "yes") {
                 return;
             }
@@ -119,13 +129,14 @@ const run = async () => {
         
         
         //get prefix for files
-        const prefix = helpers.prefixGenerator(configs, isProdDeployment, repositoryId);
+        const prefix = helpers.prefixGenerator(configs, deploymentType, repositoryId);
       
 
         //get file contents from the build folder
         try{
             //gets an array of file contents.  Each item in the array ahs filename, and filecontent, and conditionally a "isIndexFile" boolean.
             var arrayOfFileContents = helpers.getAllFileContents(filesConf, files.getFileContents, prefix);
+            
             if( !arrayOfFileContents || arrayOfFileContents.length < 1 ) {
                 alert.error('Please check your qbcli.json in the root of your project. Make sure you have mapped the correct path to all of the files you are trying to deploy.  Also check all filenames match what is in those directories - and that all files have content (this tool will not deploy blank files - add a comment in the file if you would like to deploy without code).');
                 return;
@@ -174,11 +185,16 @@ const run = async () => {
                 if (i.config && indexFileName && i.config.data.indexOf(indexFileName) >= 0) {
                     var resObj = xmlparser.parse(i.data);
                     var pageID = resObj.qdbapi.pageID;
-                    if ( args._.includes('prod') ) {
-                        let file = editJsonFile(`./${qbCLIConfName}`);
-                        file.set("launchProdPageId", pageID);
-                        file.save();
-                    } else {
+                    if ( deploymentType === 'prod' ) {
+                        try {
+                            let file = editJsonFile(`./${qbCLIConfName}`);
+                            file.set("launchProdPageId", pageID);
+                            file.save();
+                        } catch (error) {
+                            alert.error(`There was an error adding the pageID.  Note, your application still was deployed, but you may have trouble with lprod. \n ${error}`)
+                        }
+                        
+                    } else if( deploymentType === 'dev' ) {
                         try {
                             let file = editJsonFile(`./${qbCLIConfName}`);
                             file.set("launchDevPageId", pageID);
@@ -187,6 +203,14 @@ const run = async () => {
                             alert.error(`There was an error adding the pageID.  Note, your application still was deployed, but you may have trouble with ldev. \n ${error}`)
                         }
                         
+                    } else if ( deploymentType === 'feat' ) {
+                        try {
+                            let file = editJsonFile(`./${qbCLIConfName}`);
+                            file.set("launchFeatPageId", pageID);
+                            file.save();
+                        } catch (error) {
+                            alert.error(`There was an error adding the pageID.  Note, your application still was deployed, but you may have trouble with lfeat. \n ${error}`)
+                        }
                     }
                 }
             });
@@ -221,6 +245,18 @@ const run = async () => {
         const { dbid, realm } = configs;
         //launch the webpage
         opn(`https://${realm}.quickbase.com/db/${dbid}?a=dbpage&pageID=${launchProdPageId}`);
+    } else if (args._.includes('lfeat')) {
+        //get repo ID and files to push to feat
+        const { launchFeatPageId, repositoryId } = files.readJSONFile(`./${qbCLIConfName}`);
+        if (!launchFeatPageId) {
+            alert.error('You must first deploy the production files to the Quick Base application before you can use this command.  Try running "deployqb prod" first.');
+            return;
+        }
+        //get configs stored from qbcli install
+        const configs = configurationFile.get(repositoryId);
+        const { dbid, realm } = configs;
+        //launch the webpage
+        opn(`https://${realm}.quickbase.com/db/${dbid}?a=dbpage&pageID=${launchFeatPageId}`);
     } else if (args._.includes('help')) {
         alert.success('deployqb commands');
         console.log('init:  Initializes this project.  This command must be run in order to utilize the other deployqb commands');
@@ -228,6 +264,7 @@ const run = async () => {
         console.log('prod:  Deploys your files to the production environment.');
         console.log('ldev:  Launch your development environment in Quick Base with your default browser.');
         console.log('lprod: Launch your production environment in Quick Base with your default browser.');
+        console.log('lfeat: Launch your feature environment in Quick Base with your default browser.');
     } else if (args._.includes('edevprefix')) {
         const { repositoryId } = files.readJSONFile(`./${qbCLIConfName}`);
         const configs = configurationFile.get(repositoryId);
@@ -244,6 +281,14 @@ const run = async () => {
         configs.customPrefixProduction = input.newPrefix;
         configurationFile.set(repositoryId, configs);
         alert.success('Your production prefix has been updated successfully.')
+    } else if (args._.includes('efeatprefix')) {
+        const { repositoryId } = files.readJSONFile(`./${qbCLIConfName}`);
+        const configs = configurationFile.get(repositoryId);
+        console.log('\nYour current feature prefix is: ' + configs.customPrefixFeature + '\n');
+        const input = await modifyPrefixInput.getInput();
+        configs.customPrefixFeature = input.newPrefix;
+        configurationFile.set(repositoryId, configs);
+        alert.success('Your feature prefix has been updated successfully.')
     }
   
 }
