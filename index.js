@@ -284,7 +284,7 @@ const run = async () => {
         console.log('lfeat:       Open your feature environment in Quick Base with your default browser.');
         console.log('ldev:        Open your development environment in Quick Base with your default browser.');
         console.log('lprod:       Open your production environment in Quick Base with your default browser.');
-        console.log('efeatprefix: Edit Production environment prefix.');
+        console.log('efeatprefix: Edit Feature environment prefix.');
         console.log('edevprefix:  Edit Developer environment prefix.');
         console.log('eprodprefix: Edit Production environment prefix.');
         console.log('genlinks:    Displays a list of possible links for each file in your project.\n');
