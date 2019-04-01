@@ -9,8 +9,9 @@ deployqb attempts to solve the copy/paste problem when trying to deploy your fil
 
 **Available Commands**
 
- - **deployqb init** - Run this from the root of your project to initialize the CLI tool. 
- - **deployqb dev** - Run this to deploy your code to Quick Base for the UAT environment. 
+ - **deployqb init** - Run this from the root of your project to initialize the CLI tool.
+ - **deployqb feat** - Run this to deploy your code to Quick Base for the Feature environment. 
+ - **deployqb dev** - Run this to deploy your code to Quick Base for the Development environment. 
  - **deployqb prod** - Run this to deploy your code to Quick Base for the production environment.
  - **deployqb lfeat** - Launch the Feature environment in your default browser. 
  - **deployqb ldev** - Launch the Developer environment in your default browser. 
