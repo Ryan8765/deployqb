@@ -73,7 +73,7 @@ const run = async () => {
 
 
         //make sure git ignore includes qbcli.json
-        var pathToGitignore = path.join(path.cwd(), gitIgnoreFileName);
+        var pathToGitignore = path.join(process.cwd(), gitIgnoreFileName);
 
         try {
             files.updateGitIgnore(pathToGitignore, qbCLIConfName);
