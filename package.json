@@ -11,7 +11,11 @@
     "url": "git+https://github.com/Ryan8765/deployqb.git"
   },
   "keywords": [
-    "CLI", "Quick Base", "QuickBase", "dbpages", "deploy"
+    "CLI",
+    "Quick Base",
+    "QuickBase",
+    "dbpages",
+    "deploy"
   ],
   "author": "Ryan Haas",
   "license": "ISC",
@@ -32,7 +36,7 @@
     "fast-xml-parser": "^3.12.16",
     "figlet": "^1.2.0",
     "inquirer": "^6.1.0",
-    "lodash": "^4.17.10",
+    "lodash": "^4.17.11",
     "minimist": "^1.2.0",
     "opn": "^5.5.0",
     "parse-gitignore": "^1.0.1",
