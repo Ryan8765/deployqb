@@ -1,0 +1,26 @@
+{
+  "repositoryId": "98765",
+  "conf": "4c96a4e50cf59d4a8df5c8a64",
+  "filesConf": [
+    {
+      "filename": "index.js",
+      "path": "./build/js/"
+    },
+    {
+      "filename": "main.css",
+      "path": "./build/styles/"
+    },
+    {
+      "filename": "index.html",
+      "path": "./build/",
+      "dependencies": [
+        0,
+        1
+      ],
+      "isIndexFile": true
+    }
+  ],
+  "launchDevPageId": 246,
+  "launchProdPageId": 238,
+  "launchFeatPageId": 243
+}
