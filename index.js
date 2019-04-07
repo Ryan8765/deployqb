@@ -221,6 +221,7 @@ const run = async () => {
         var errorMessage = null;
         var repositoryId = null;
         var qbCLIConfigs = null;
+        var queryString  = null;
 
         //make sure user is running this from the root of their react directory
         if (!files.fileFolderExists(pathToQBCLIJSON)) {
@@ -231,6 +232,7 @@ const run = async () => {
         //get repo ID
         qbCLIConfigs = files.readJSONFile(pathToQBCLIJSON);
         repositoryId = qbCLIConfigs.repositoryId;
+        queryString = qbCLIConfigs.urlQueryString;
 
         //set correct pageID for prod/dev/feat
         if (args._.includes('lprod') ) {
@@ -255,8 +257,16 @@ const run = async () => {
             return;
         }
         const { dbid, realm } = configs;
+
+        //add optional query string if present from qbcli.json
+        if( queryString ) {
+            queryString = encodeURI(`&${queryString}`);
+        } else {
+            queryString = '';
+        }
+
         //launch the webpage
-        opn(`https://${realm}.quickbase.com/db/${dbid}?a=dbpage&pageID=${pageId}`);
+        opn(`https://${realm}.quickbase.com/db/${dbid}?a=dbpage&pageID=${pageId}${queryString}`);
     } else if (args._.includes('help')) {
         alert.success('deployqb commands');
         console.log('init:        Initializes this project.');

@@ -96,6 +96,13 @@ Team Member 2 Feature Prefix - "modal"
 
 When team member 1 & team member 2 deploy to Quick Base they will overwrite each others work.
 
+## Optional Query String
+In the qbcli.json file you can add an optional "urlQueryString."  If present, when you run the commands "deployqb ldev", "deployqb lprod" and "deployqb lfeat", the query string will be appended to the URL.  Example:
+
+    "urlQueryString": "rid=348&fid=324"
+
+This will append the above query string to the URL's when launching.
+
 ## Final Note
 DO NOT use this tool on public computers.  User tokens and application tokens are encrypted on the users machine, but you should never use this tool on a machine that others have access to.
 
