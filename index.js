@@ -57,7 +57,6 @@ const run = async () => {
         //update app & usertoken
         input.apptoken = cryptr.encrypt(input.apptoken);
         input.usertoken = cryptr.encrypt(input.usertoken);
-        console.log(input);
 
         //create qbcli template object
         const data = qbcliTemplate(repositoryId, salt);
