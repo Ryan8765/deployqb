@@ -1,7 +1,7 @@
 {
-  "urlQueryString": "rid=348&fid=324",
-  "repositoryId": "987654",
-  "conf": "3c767b1804666ff7b3370677b",
+  "urlQueryString": "",
+  "repositoryId": "191919",
+  "conf": "63179957b698ef0066e0e3725",
   "filesConf": [
     {
       "filename": "index.js",
@@ -21,7 +21,5 @@
       "isIndexFile": true
     }
   ],
-  "launchProdPageId": 248,
-  "launchDevPageId": 250,
-  "launchFeatPageId": 257
+  "launchFeatPageId": 320
 }

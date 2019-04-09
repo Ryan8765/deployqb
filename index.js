@@ -28,8 +28,11 @@ const modifyPrefixInput = require('./lib/userInputModifyPrefix');
 //init configstore
 const configurationFile = new Configstore(pkg.name);
 
+//load enums/commands
+const ENUMS = require('./lib/enums');
+
 //configs
-const qbCLIConfName = 'qbcli.json';
+const qbCLIConfName = ENUMS.QB_CLI_FILE_NAME;
 const gitIgnoreFileName = './.gitignore';
 
 
@@ -41,7 +44,7 @@ const run = async () => {
 
 
     //if running the install
-    if( args._.includes('init') ) {
+    if (args._.includes(ENUMS.DEPLOYQB_INIT_CMD) ) {
 
         //clear the screen
         clear();
@@ -54,10 +57,10 @@ const run = async () => {
         //update app & usertoken
         input.apptoken = cryptr.encrypt(input.apptoken);
         input.usertoken = cryptr.encrypt(input.usertoken);
+        console.log(input);
 
         //create qbcli template object
         const data = qbcliTemplate(repositoryId, salt);
-    
 
         //create qbcli.json file
         try {
@@ -84,15 +87,15 @@ const run = async () => {
         alert.success('A qbcli.json file has been created in the root of your project directory.  Please update this file to include all files that you need to deploy to QB');    
 
     //if running the production or development deploy option
-    } else if (args._.includes('dev') || args._.includes('prod') || args._.includes('feat') ) {
+    } else if (args._.includes(ENUMS.DEPLOY_DEV_CMD) || args._.includes(ENUMS.DEPLOY_PROD_CMD) || args._.includes(ENUMS.DEPLOY_FEAT_CMD) ) {
         var pathToQBCLIJSON = path.join(process.cwd(), qbCLIConfName);
         //set the necessary deployment type
         var deploymentType = null;
-        if (args._.includes('dev') ) {
+        if (args._.includes(ENUMS.DEPLOY_DEV_CMD) ) {
             deploymentType = 'dev';
-        } else if (args._.includes('prod') ) {
+        } else if (args._.includes(ENUMS.DEPLOY_PROD_CMD) ) {
             deploymentType = 'prod';
-        } else if (args._.includes('feat') ) {
+        } else if (args._.includes(ENUMS.DEPLOY_FEAT_CMD) ) {
             deploymentType = 'feat';
         }
 
@@ -215,7 +218,7 @@ const run = async () => {
             status.stop();
             alert.error(`API call failure - files weren\'t deployed successfully. Check your application token and user token.  You can run deployqb init again to reconfigure those values.  Note, running deployqb init will reconfigure your "files" in your qbcli.json file.  Make a copy of these values before re-running deployqb init. \n\nQB response: ${err.response.statusText}`);
         });
-    } else if (args._.includes('lprod') || args._.includes('lfeat') || args._.includes('ldev')) {
+    } else if (args._.includes(ENUMS.LAUNCH_PROD_CMD) || args._.includes(ENUMS.LAUNCH_FEAT_CMD) || args._.includes(ENUMS.LAUNCH_DEV_CMD)) {
         var pathToQBCLIJSON = path.join(process.cwd(), qbCLIConfName);
         var pageId = null;
         var errorMessage = null;
@@ -235,13 +238,13 @@ const run = async () => {
         queryString = qbCLIConfigs.urlQueryString;
 
         //set correct pageID for prod/dev/feat
-        if (args._.includes('lprod') ) {
+        if (args._.includes(ENUMS.LAUNCH_PROD_CMD) ) {
             pageId = qbCLIConfigs.launchProdPageId;
             errorMessage = 'You must first deploy the production files to the Quick Base application before you can use this command.  Try running "deployqb prod" first.';
-        } else if ( args._.includes('ldev') ) {
+        } else if (args._.includes(ENUMS.LAUNCH_DEV_CMD) ) {
             pageId = qbCLIConfigs.launchDevPageId;
             errorMessage = 'You must first deploy the development files to the Quick Base application before you can use this command.Try running "deployqb dev" first.';
-        } else if (args._.includes('lfeat')) {
+        } else if (args._.includes(ENUMS.LAUNCH_FEAT_CMD)) {
             pageId = qbCLIConfigs.launchFeatPageId;
             errorMessage = 'You must first deploy the feature files to the Quick Base application before you can use this command.  Try running "deployqb feat" first.';
         }
@@ -267,7 +270,7 @@ const run = async () => {
 
         //launch the webpage
         opn(`https://${realm}.quickbase.com/db/${dbid}?a=dbpage&pageID=${pageId}${queryString}`);
-    } else if (args._.includes('help')) {
+    } else if (args._.includes(ENUMS.DEPLOYQB_HELP)) {
         alert.success('deployqb commands');
         console.log('init:        Initializes this project.');
         console.log('feat:        Deploys your files to the feature environment.');
@@ -281,7 +284,7 @@ const run = async () => {
         console.log('eprodprefix: Edit Production environment prefix.');
         console.log('genlinks:    Displays a list of possible links for each file in your project.\n');
 
-    } else if (args._.includes('edevprefix') || args._.includes('eprodprefix') || args._.includes('efeatprefix')) {
+    } else if (args._.includes(ENUMS.EDIT_DEV_PREFIX_CMD) || args._.includes(ENUMS.EDIT_PROD_PREFIX_CMD) || args._.includes(ENUMS.EDIT_FEAT_PREFIX_CMD)) {
         var prefixReference = null;
         
         var pathToQBCLIJSON = path.join(process.cwd(), qbCLIConfName);
@@ -299,11 +302,11 @@ const run = async () => {
         }
 
         //get correct name for prefix
-        if ( args._.includes('edevprefix')) {
+        if (args._.includes(ENUMS.EDIT_DEV_PREFIX_CMD)) {
             prefixReference = "customPrefix";
-        } else if ( args._.includes('eprodprefix') ) {
+        } else if (args._.includes(ENUMS.EDIT_PROD_PREFIX_CMD) ) {
             prefixReference = "customPrefixProduction";
-        } else if ( args._.includes('efeatprefix') ) {
+        } else if (args._.includes(ENUMS.EDIT_FEAT_PREFIX_CMD) ) {
             prefixReference = "customPrefixFeature";
         }
 
@@ -313,7 +316,7 @@ const run = async () => {
         configs[prefixReference] = input.newPrefix;
         configurationFile.set(repositoryId, configs);
         alert.success('Your development prefix has been updated successfully.')
-    } else if (args._.includes('genlinks')) {
+    } else if (args._.includes(ENUMS.GENERATE_LINKS_CMD)) {
         var pathToQBCLIJSON = path.join(process.cwd(), qbCLIConfName);
 
         //make sure user is running this from the root of their react directory
