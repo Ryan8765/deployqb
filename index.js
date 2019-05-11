@@ -215,7 +215,22 @@ const run = async () => {
             alert.success('Files deployed successfully!')
         }).catch((err)=>{
             status.stop();
-            alert.error(`API call failure - files weren\'t deployed successfully. Check your application token and user token.  You can run deployqb init again to reconfigure those values.  Note, running deployqb init will reconfigure your "files" in your qbcli.json file.  Make a copy of these values before re-running deployqb init. \n\nQB response: ${err.response.statusText}`);
+            alert.error(`API call failure - files weren\'t deployed successfully - see error details below. If you need to update your user/application token, you can run deployqb init again to reconfigure these values.  Note, running deployqb init will replace your "filesConf" array in your qbcli.json file.  Make a copy of this array before re-running deployqb init. \n\nQuick Base Response:`);
+
+            if( err.response.statusText ) {
+                alert.error(err.response.statusText);
+            }
+            
+            if( err.response.data ) {
+                alert.error(err.response.data);
+            }
+
+            if (err.response.config.data) {
+                var errData = xmlparser.parse(err.response.config.data);
+                var pageName = errData.qdbapi.pagename;
+                alert.error(`Error Occurred for File: ${pageName}\n\n`);
+            }
+            
         });
     } else if (args._.includes(ENUMS.LAUNCH_PROD_CMD) || args._.includes(ENUMS.LAUNCH_FEAT_CMD) || args._.includes(ENUMS.LAUNCH_DEV_CMD)) {
         var pathToQBCLIJSON = path.join(process.cwd(), qbCLIConfName);
