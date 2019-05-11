@@ -61,6 +61,19 @@ const run = async () => {
         //create qbcli template object
         const data = qbcliTemplate(repositoryId, salt);
 
+
+
+        //if qbcli already exists - don't overwrite files array
+        var pathToQBCLIJSON = path.join(process.cwd(), qbCLIConfName);
+        
+        if (files.fileFolderExists(pathToQBCLIJSON)) {
+            const existingQBCLI = files.readJSONFile(pathToQBCLIJSON);
+            data.urlQueryString = existingQBCLI.urlQueryString;
+            data.filesConf = existingQBCLI.filesConf;
+        }
+
+
+
         //create qbcli.json file
         try {
             files.saveJSONToFile(`${qbCLIConfName}`, data);
@@ -215,7 +228,7 @@ const run = async () => {
             alert.success('Files deployed successfully!')
         }).catch((err)=>{
             status.stop();
-            alert.error(`API call failure - files weren\'t deployed successfully - see error details below. If you need to update your user/application token, you can run deployqb init again to reconfigure these values.  Note, running deployqb init will replace your "filesConf" array in your qbcli.json file.  Make a copy of this array before re-running deployqb init. \n\nQuick Base Response:`);
+            alert.error(`API call failure - files weren\'t deployed successfully - see error details below. If you need to update your user/application token, you can run deployqb init again to reconfigure those values.\n\nQuick Base Response:`);
 
             if( err.response.statusText ) {
                 alert.error(err.response.statusText);
