@@ -86,16 +86,6 @@ const run = async () => {
         //save qb db configs
         configurationFile.set(repositoryId, input);
 
-
-        //make sure git ignore includes qbcli.json
-        var pathToGitignore = path.join(process.cwd(), gitIgnoreFileName);
-
-        try {
-            files.updateGitIgnore(pathToGitignore, qbCLIConfName);
-        } catch (error) {
-            alert.warning('Not able to update .gitignore.  Please add the qbcli.json to your .gitignore if this project is initialized with git.');
-        }
-
         alert.success('A qbcli.json file has been created in the root of your project directory.  Please update this file to include all files that you need to deploy to QB');    
 
     //if running the production or development deploy option
