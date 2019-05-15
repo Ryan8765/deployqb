@@ -13,7 +13,7 @@ const path = require('path');
 const opn = require('opn');
 const xmlparser = require('fast-xml-parser');
 const editJsonFile = require("edit-json-file");
-
+const stripBom = require('strip-bom');
 
 //custom scripts
 const files = require('./lib/files');
@@ -140,7 +140,7 @@ const run = async () => {
         //get file contents from the build folder
         try{
             //gets an array of file contents.  Each item in the array ahs filename, and filecontent, and conditionally a "isIndexFile" boolean.
-            var arrayOfFileContents = helpers.getAllFileContents(filesConf, files.getFileContents, prefix);
+            var arrayOfFileContents = helpers.getAllFileContents(filesConf, files.getFileContents, prefix, stripBom);
             
             if( !arrayOfFileContents || arrayOfFileContents.length < 1 ) {
                 alert.error('Please check your qbcli.json in the root of your project. Make sure you have mapped the correct path to all of the files you are trying to deploy.  Also check all filenames match what is in those directories - and that all files have content (this tool will not deploy blank files - add a comment in the file if you would like to deploy without code).');
