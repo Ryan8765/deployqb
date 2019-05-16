@@ -14,6 +14,7 @@ const opn = require('opn');
 const xmlparser = require('fast-xml-parser');
 const editJsonFile = require("edit-json-file");
 const stripBom = require('strip-bom');
+const keytar = require('keytar');
 
 //custom scripts
 const files = require('./lib/files');
@@ -24,6 +25,7 @@ const qbcliTemplate = require('./lib/qbcliTemplate');
 const userInput = require('./lib/userInput');
 const userConfirmation = require('./lib/userInputConfirmation');
 const modifyPrefixInput = require('./lib/userInputModifyPrefix');
+const pwManager = require('./lib/pwManager');
 
 //init configstore
 const configurationFile = new Configstore(pkg.name);
@@ -51,15 +53,26 @@ const run = async () => {
 
         const input = await userInput.getInput();
         const repositoryId = input.repositoryId;
-        const salt = cryptoRandomString(25);
-        const cryptr = new Cryptr(salt);
 
-        //update app & usertoken
-        input.apptoken = cryptr.encrypt(input.apptoken);
-        input.usertoken = cryptr.encrypt(input.usertoken);
+
+        const setUserToken = await keytar.setPassword(ENUMS.DEPLOYQB_NAME, repositoryId, input.usertoken);
+        const setAppToken = await keytar.setPassword(ENUMS.DEPLOYQB_NAME, repositoryId, input.apptoken);
+        
+        if(!input.customPrefix) {
+            input.customPrefix = "D";
+        }
+
+        if (!input.customPrefixProduction) {
+            input.customPrefixProduction = "P";
+        }
+
+        if (!input.customPrefixFeature) {
+            input.customPrefixFeature = "F";
+        }
+        
 
         //create qbcli template object
-        const data = qbcliTemplate(repositoryId, salt);
+        const data = qbcliTemplate(input);
 
 
 
