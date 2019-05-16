@@ -34,10 +34,15 @@ const configurationFile = new Configstore(pkg.name);
 const ENUMS = require('./lib/enums');
 
 //configs
-const qbCLIConfName = ENUMS.QB_CLI_FILE_NAME;
-const gitIgnoreFileName = './.gitignore';
+const qbCLIConfName      = ENUMS.QB_CLI_FILE_NAME;
+var pathToQBCLIJSON      = path.join(process.cwd(), qbCLIConfName);
+var qbCliJsonExists      = files.fileFolderExists(pathToQBCLIJSON);
+var existingQbCliConfigs = null;
 
 
+if ( qbCliJsonExists ) {
+    existingQbCliConfigs = files.readJSONFile(pathToQBCLIJSON);
+}
 
 
 const run = async () => {
@@ -50,8 +55,15 @@ const run = async () => {
 
         //clear the screen
         clear();
+        var input = null;
 
-        const input = await userInput.getInput();
+        if ( !qbCliJsonExists ) {
+            input = await userInput.getInput();
+        } else {
+            input = await userInput.getRevisedUserInput( existingQbCliConfigs );
+        }
+
+
         const repositoryId = input.repositoryId;
 
 
