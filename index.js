@@ -7,8 +7,6 @@ const pkg = require('./package.json');
 const CLI = require ('clui');
 const Spinner = CLI.Spinner;
 const minimist = require('minimist');
-const Cryptr = require('cryptr');
-const cryptoRandomString = require('crypto-random-string');
 const path = require('path');
 const opn = require('opn');
 const xmlparser = require('fast-xml-parser');
@@ -25,7 +23,7 @@ const qbcliTemplate = require('./lib/qbcliTemplate');
 const userInput = require('./lib/userInput');
 const userConfirmation = require('./lib/userInputConfirmation');
 const modifyPrefixInput = require('./lib/userInputModifyPrefix');
-const pwManager = require('./lib/pwManager');
+
 
 //init configstore
 const configurationFile = new Configstore(pkg.name);
@@ -33,22 +31,26 @@ const configurationFile = new Configstore(pkg.name);
 //load enums/commands
 const ENUMS = require('./lib/enums');
 
-//configs
-const qbCLIConfName      = ENUMS.QB_CLI_FILE_NAME;
-var pathToQBCLIJSON      = path.join(process.cwd(), qbCLIConfName);
-var qbCliJsonExists      = files.fileFolderExists(pathToQBCLIJSON);
-var existingQbCliConfigs = null;
-
-
-if ( qbCliJsonExists ) {
-    existingQbCliConfigs = files.readJSONFile(pathToQBCLIJSON);
-}
-
-
+/**
+ * Runs the main logic for the CLI Script
+ */
 const run = async () => {
 
-    const args = minimist(process.argv.slice(2));
+    //configs used by multiple CLI commands
+    const qbCLIConfName      = ENUMS.QB_CLI_FILE_NAME;
+    var pathToQBCLIJSON      = path.join(process.cwd(), qbCLIConfName);
+    var qbCliJsonExists      = files.fileFolderExists(pathToQBCLIJSON);
+    var existingQbCliConfigs = null;
 
+
+    if (qbCliJsonExists) {
+        existingQbCliConfigs = files.readJSONFile(pathToQBCLIJSON);
+    }
+
+
+
+
+    const args = minimist(process.argv.slice(2));
 
     //if running the install
     if (args._.includes(ENUMS.DEPLOYQB_INIT_CMD) ) {
@@ -67,8 +69,21 @@ const run = async () => {
         const repositoryId = input.repositoryId;
 
 
-        const setUserToken = await keytar.setPassword(ENUMS.DEPLOYQB_NAME, repositoryId, input.usertoken);
-        const setAppToken = await keytar.setPassword(ENUMS.DEPLOYQB_NAME, repositoryId, input.apptoken);
+        //set usertoken and app token in secure storage
+        try {
+            const setUserToken = await keytar.setPassword(ENUMS.DEPLOYQB_NAME, `${repositoryId}ut`, input.usertoken);
+        } catch (error) {
+            alert.error('Error setting user token.  If you are on Linux - you may need to install "libsecret" - see documentation https://www.npmjs.com/package/keytar');
+            alert.error(error);
+        }
+
+        try {
+            const setAppToken = await keytar.setPassword(ENUMS.DEPLOYQB_NAME, `${repositoryId}ap`, input.apptoken);
+        } catch (error) {
+            alert.error('Error setting user token.  If you are on Linux - you may need to install "libsecret" - see documentation https://www.npmjs.com/package/keytar');
+            alert.error(error);
+        }
+        
         
         if(!input.customPrefix) {
             input.customPrefix = "D";
@@ -86,18 +101,17 @@ const run = async () => {
         //create qbcli template object
         const data = qbcliTemplate(input);
 
-
-
-        //if qbcli already exists - don't overwrite files array
-        var pathToQBCLIJSON = path.join(process.cwd(), qbCLIConfName);
-        
-        if (files.fileFolderExists(pathToQBCLIJSON)) {
-            const existingQBCLI = files.readJSONFile(pathToQBCLIJSON);
-            data.urlQueryString = existingQBCLI.urlQueryString;
-            data.filesConf = existingQBCLI.filesConf;
+        //IF qbcli.json already exists - grab the urlquery string and filesconf        
+        if ( qbCliJsonExists ) {
+            data.urlQueryString = existingQbCliConfigs.urlQueryString;
+            data.filesConf = existingQbCliConfigs.filesConf;
         }
 
 
+        //Save feature prefix outside project/repo/qbcli.json - as this is specific for an individual coder
+        configurationFile.set(repositoryId, {
+            customPrefixFeature: input.customPrefixFeature
+        });
 
         //create qbcli.json file
         try {
@@ -108,14 +122,11 @@ const run = async () => {
         }
         
 
-        //save qb db configs
-        configurationFile.set(repositoryId, input);
-
         alert.success('A qbcli.json file has been created in the root of your project directory.  Please update this file to include all files that you need to deploy to QB');    
 
     //if running the production or development deploy option
     } else if (args._.includes(ENUMS.DEPLOY_DEV_CMD) || args._.includes(ENUMS.DEPLOY_PROD_CMD) || args._.includes(ENUMS.DEPLOY_FEAT_CMD) ) {
-        var pathToQBCLIJSON = path.join(process.cwd(), qbCLIConfName);
+        
         //set the necessary deployment type
         var deploymentType = null;
         if (args._.includes(ENUMS.DEPLOY_DEV_CMD) ) {
@@ -126,17 +137,14 @@ const run = async () => {
             deploymentType = 'feat';
         }
 
-        //const isProdDeployment = args._.includes('prod') ? true : false;
-
         //make sure user is running this from the root of their react directory
-        if (!files.fileFolderExists(pathToQBCLIJSON)) {
+        if ( !qbCliJsonExists ) {
             alert.error('This deployqb command can only be run from the root of your directory.');
             return;
         }
 
-
         //get repo ID and files to push to prod
-        const { repositoryId, filesConf, conf } = files.readJSONFile(pathToQBCLIJSON);
+        const { repositoryId, filesConf } = existingQbCliConfigs;
         if (filesConf.length < 1) {
             alert.error('You must list files to deploy in your qbcli.json.')
             return;
@@ -159,8 +167,12 @@ const run = async () => {
         
         
         //get prefix for files
-        const prefix = helpers.prefixGenerator(configs, deploymentType, repositoryId);
-      
+        const prefix = helpers.prefixGenerator({
+                customPrefix: existingQbCliConfigs.devPrefix,
+                customPrefixProduction: existingQbCliConfigs.prodPrefix,
+                customPrefixFeature: configs.customPrefixFeature
+            }, deploymentType, repositoryId);
+
 
         //get file contents from the build folder
         try{
@@ -187,26 +199,47 @@ const run = async () => {
             return;
         }
         
+        
 
         
-        const cryptr = new Cryptr(conf);
 
-        //decrypt usertoken and password
-        configs.usertoken = cryptr.decrypt(configs.usertoken);
-        configs.apptoken = cryptr.decrypt(configs.apptoken);
 
         /*
             Add files to QB
         */
+
+        //decrypt usertoken and password
+        try {
+            var usertoken = await keytar.getPassword(ENUMS.DEPLOYQB_NAME, `${repositoryId}ut`);
+        } catch (error) {
+            alert.error('Error getting user token.  If you are on Linux - you may need to install "libsecret" - see documentation https://www.npmjs.com/package/keytar');
+            alert.error(error);
+            return;
+        }
+
+        try {
+            var apptoken = await keytar.getPassword(ENUMS.DEPLOYQB_NAME, `${repositoryId}at`);
+        } catch (error) {
+            alert.error('Error getting user token.  If you are on Linux - you may need to install "libsecret" - see documentation https://www.npmjs.com/package/keytar');
+            alert.error(error);
+            return;
+        }
+        
+
 
         //start spinner
         const status = new Spinner('Processing request, please wait...');
         status.start();
 
         //get all promises for API calls.
-        var allPromises = helpers.generateAllAPICallPromises(configs, arrayOfFileContents, qb.addUpdateDbPage);
+        var allPromises = helpers.generateAllAPICallPromises({
+                dbid: existingQbCliConfigs.dbid,
+                realm: existingQbCliConfigs.realm,
+                apptoken,
+                usertoken
+            }, arrayOfFileContents, qb.addUpdateDbPage);
 
-
+        
         //api calls
         Promise.all(allPromises).then((res)=>{
             //loop through the responses to set the appropriate dbpage id value for dev/production in the qbcli.json.
@@ -261,7 +294,7 @@ const run = async () => {
             
         });
     } else if (args._.includes(ENUMS.LAUNCH_PROD_CMD) || args._.includes(ENUMS.LAUNCH_FEAT_CMD) || args._.includes(ENUMS.LAUNCH_DEV_CMD)) {
-        var pathToQBCLIJSON = path.join(process.cwd(), qbCLIConfName);
+
         var pageId = null;
         var errorMessage = null;
         var repositoryId = null;
@@ -269,26 +302,25 @@ const run = async () => {
         var queryString  = null;
 
         //make sure user is running this from the root of their react directory
-        if (!files.fileFolderExists(pathToQBCLIJSON)) {
+        if ( !qbCliJsonExists ) {
             alert.error('This deployqb command can only be run from the root of your directory.');
             return;
         }
 
         //get repo ID
-        qbCLIConfigs = files.readJSONFile(pathToQBCLIJSON);
-        repositoryId = qbCLIConfigs.repositoryId;
-        queryString = qbCLIConfigs.urlQueryString;
+        repositoryId = existingQbCliConfigs.repositoryId;
+        queryString  = existingQbCliConfigs.urlQueryString;
 
         //set correct pageID for prod/dev/feat
         if (args._.includes(ENUMS.LAUNCH_PROD_CMD) ) {
-            pageId = qbCLIConfigs.launchProdPageId;
-            errorMessage = 'You must first deploy the production files to the Quick Base application before you can use this command.  Try running "deployqb prod" first.';
+            pageId = existingQbCliConfigs.launchProdPageId;
+            errorMessage = 'You must first deploy the production files to the Quick Base application before you can use this command.  Try running "deployqb prod" first.  If you have done that, then you need to set an "isIndexFile" in your qbcli.json to use this command (see npm docs).';
         } else if (args._.includes(ENUMS.LAUNCH_DEV_CMD) ) {
-            pageId = qbCLIConfigs.launchDevPageId;
-            errorMessage = 'You must first deploy the development files to the Quick Base application before you can use this command.Try running "deployqb dev" first.';
+            pageId = existingQbCliConfigs.launchDevPageId;
+            errorMessage = 'You must first deploy the development files to the Quick Base application before you can use this command.  Try running "deployqb dev" first. If you have done that, then you need to set an "isIndexFile" in your qbcli.json to use this command (see npm docs).';
         } else if (args._.includes(ENUMS.LAUNCH_FEAT_CMD)) {
-            pageId = qbCLIConfigs.launchFeatPageId;
-            errorMessage = 'You must first deploy the feature files to the Quick Base application before you can use this command.  Try running "deployqb feat" first.';
+            pageId = existingQbCliConfigs.launchFeatPageId;
+            errorMessage = 'You must first deploy the feature files to the Quick Base application before you can use this command.  Try running "deployqb feat" first. If you have done that, then you need to set an "isIndexFile" in your qbcli.json to use this command (see npm docs).';
         }
         //get repo ID and files to push to prod
         if (!pageId) {
@@ -301,7 +333,7 @@ const run = async () => {
             alert.error('Project may never have been initialized - please run deployqb init.');
             return;
         }
-        const { dbid, realm } = configs;
+        const { dbid, realm } = existingQbCliConfigs;
 
         //add optional query string if present from qbcli.json
         if( queryString ) {
@@ -321,22 +353,26 @@ const run = async () => {
         console.log('lfeat:       Open your feature environment in Quick Base with your default browser.');
         console.log('ldev:        Open your development environment in Quick Base with your default browser.');
         console.log('lprod:       Open your production environment in Quick Base with your default browser.');
-        console.log('efeatprefix: Edit Feature environment prefix.');
-        console.log('edevprefix:  Edit Developer environment prefix.');
-        console.log('eprodprefix: Edit Production environment prefix.');
+        console.log('efeatprefix: Feature prefix is stored outside qbcli.json - this allows you to edit the Feature environment prefix.');
         console.log('genlinks:    Displays a list of possible links for each file in your project.\n');
 
     } else if (args._.includes(ENUMS.EDIT_DEV_PREFIX_CMD) || args._.includes(ENUMS.EDIT_PROD_PREFIX_CMD) || args._.includes(ENUMS.EDIT_FEAT_PREFIX_CMD)) {
+
+        if (args._.includes(ENUMS.EDIT_DEV_PREFIX_CMD) || args._.includes(ENUMS.EDIT_PROD_PREFIX_CMD) ) {
+            alert.warning('After running "deployqb init", you can update your dev and prod prefix in the qbcli.json file in the root of your project.  Only efeatprefix is still supported, as this prefix is saved outside the qbcli.json file.');
+            return;
+        }
+        
+
         var prefixReference = null;
         
-        var pathToQBCLIJSON = path.join(process.cwd(), qbCLIConfName);
 
         //make sure user is running this from the root of their react directory
-        if (!files.fileFolderExists(pathToQBCLIJSON)) {
+        if ( !qbCliJsonExists ) {
             alert.error('This deployqb command can only be run from the root of your directory.');
             return;
         }
-        const { repositoryId } = files.readJSONFile(pathToQBCLIJSON);
+        const { repositoryId } = existingQbCliConfigs;
         const configs = configurationFile.get(repositoryId);
         if (!configs) {
             alert.error('Project may never have been initialized - please run deployqb init.');
@@ -344,29 +380,24 @@ const run = async () => {
         }
 
         //get correct name for prefix
-        if (args._.includes(ENUMS.EDIT_DEV_PREFIX_CMD)) {
-            prefixReference = "customPrefix";
-        } else if (args._.includes(ENUMS.EDIT_PROD_PREFIX_CMD) ) {
-            prefixReference = "customPrefixProduction";
-        } else if (args._.includes(ENUMS.EDIT_FEAT_PREFIX_CMD) ) {
+        if (args._.includes(ENUMS.EDIT_FEAT_PREFIX_CMD) ) {
             prefixReference = "customPrefixFeature";
         }
 
-
+        //set the feature prefix
         alert.warning('Your current developer prefix is: ' + configs[prefixReference]);
         const input = await modifyPrefixInput.getInput();
         configs[prefixReference] = input.newPrefix;
         configurationFile.set(repositoryId, configs);
-        alert.success('Your development prefix has been updated successfully.')
+        alert.success('Your development prefix has been updated successfully.');
     } else if (args._.includes(ENUMS.GENERATE_LINKS_CMD)) {
-        var pathToQBCLIJSON = path.join(process.cwd(), qbCLIConfName);
 
         //make sure user is running this from the root of their react directory
-        if (!files.fileFolderExists(pathToQBCLIJSON)) {
+        if ( !qbCliJsonExists ) {
             alert.error('This deployqb command can only be run from the root of your directory.');
             return;
         }
-        const { repositoryId, filesConf } = files.readJSONFile(pathToQBCLIJSON);
+        const { repositoryId, filesConf, dbid } = existingQbCliConfigs;
         //get configs stored from qbcli install
         const configs = configurationFile.get(repositoryId);
         if (!configs) {
@@ -374,14 +405,13 @@ const run = async () => {
             return;
         }
         
-        // console.log(filesConf);
         if( filesConf && filesConf.length > 0 ) {
             alert.warning('\nPOSSIBLE DEPENDENCY LINKS BASED ON YOUR QBCLI.jSON CONFIGS:');
             filesConf.forEach((file)=>{
                 alert.soft('__________________________________________');
                 const { filename } = file;
                 console.log(filename + ':\n');
-                console.log(`\t/db/${configs.dbid}?a=dbpage&pagename=${filename}`);
+                console.log(`\t/db/${dbid}?a=dbpage&pagename=${filename}`);
                 alert.soft('__________________________________________');
             });
         }
