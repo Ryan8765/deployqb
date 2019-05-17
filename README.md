@@ -30,8 +30,8 @@ After running "deployqb init" - you will need to update your qbcli.json file tha
 	"repositoryId": "<unique identifier for your project - must be unique across all projects!>",
 	"prodPrefix": "<your production prefix>",
 	"devPrefix": "<your development prefix>",
-	"dbid": "<your quick base dbid>",
-	"realm": "<your quick base realm>",
+	"dbid": "<your Quick Base dbid>",
+	"realm": "<your Quick Base realm>",
 	"filesConf": [
 		{
 			"filename": "index.css",
