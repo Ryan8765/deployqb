@@ -78,7 +78,7 @@ const run = async () => {
         }
 
         try {
-            const setAppToken = await keytar.setPassword(ENUMS.DEPLOYQB_NAME, `${repositoryId}ap`, input.apptoken);
+            const setAppToken = await keytar.setPassword(ENUMS.DEPLOYQB_NAME, `${repositoryId}at`, input.apptoken);
         } catch (error) {
             alert.error('Error setting user token.  If you are on Linux - you may need to install "libsecret" - see documentation https://www.npmjs.com/package/keytar');
             alert.error(error);
@@ -225,6 +225,8 @@ const run = async () => {
             return;
         }
         
+
+        console.log(usertoken, apptoken);
         if( !usertoken || !apptoken ) {
             alert.error('Please try to run "deployqb init" again - for some reason we can not find your usertoken or apptoken for this project.');
             return;
