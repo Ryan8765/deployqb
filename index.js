@@ -225,7 +225,10 @@ const run = async () => {
             return;
         }
         
-
+        if( !usertoken || !apptoken ) {
+            alert.error('Please try to run "deployqb init" again - for some reason we can not find your usertoken or apptoken for this project.');
+            return;
+        }
 
         //start spinner
         const status = new Spinner('Processing request, please wait...');
