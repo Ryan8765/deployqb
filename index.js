@@ -226,7 +226,6 @@ const run = async () => {
         }
         
 
-        console.log(usertoken, apptoken);
         if( !usertoken || !apptoken ) {
             alert.error('Please try to run "deployqb init" again - for some reason we can not find your usertoken or apptoken for this project.');
             return;
