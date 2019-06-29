@@ -267,9 +267,15 @@ const run = async () => {
                     }
 
                     try {
-                        file = editJsonFile(pathToQBCLIJSON);
-                        file.set(qbcliPageIDName, pageID);
-                        file.save();
+                        if( deploymentType === 'dev' || deploymentType ==="prod" ) {
+                            file = editJsonFile(pathToQBCLIJSON);
+                            file.set(qbcliPageIDName, pageID);
+                            file.save();
+                        } else {
+                            configs[qbcliPageIDName] = pageID;
+                            configurationFile.set(repositoryId, configs);
+                        }
+                        
                     } catch (error) {
                         alert.error(`${errorMessage} \n ${error}`);
                     }
@@ -323,7 +329,8 @@ const run = async () => {
             pageId = existingQbCliConfigs.launchDevPageId;
             errorMessage = 'You must first deploy the development files to the Quick Base application before you can use this command.  Try running "deployqb dev" first. If you have done that, then you need to set an "isIndexFile" in your qbcli.json to use this command (see npm docs).';
         } else if (args._.includes(ENUMS.LAUNCH_FEAT_CMD)) {
-            pageId = existingQbCliConfigs.launchFeatPageId;
+            const configs = configurationFile.get(repositoryId);
+            pageId = configs.launchFeatPageId;
             errorMessage = 'You must first deploy the feature files to the Quick Base application before you can use this command.  Try running "deployqb feat" first. If you have done that, then you need to set an "isIndexFile" in your qbcli.json to use this command (see npm docs).';
         }
         //get repo ID and files to push to prod
