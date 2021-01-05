@@ -25,7 +25,7 @@
   "homepage": "https://github.com/Ryan8765/deployqb#readme",
   "dependencies": {
     "@octokit/rest": "^15.10.0",
-    "axios": "^0.18.0",
+    "axios": "^0.21.1",
     "chalk": "^2.4.1",
     "clear": "^0.1.0",
     "clui": "^0.3.6",
