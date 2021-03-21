@@ -460,7 +460,7 @@ const run = async () => {
                 alert.soft('__________________________________________');
                 const { filename } = file;
                 console.log(filename + ':\n');
-                console.log(`\t/db/${dbid}?a=dbpage&pagename=${filename}`);
+                console.log(`\t?a=dbpage&pagename=${filename}`);
                 alert.soft('__________________________________________');
             });
         }

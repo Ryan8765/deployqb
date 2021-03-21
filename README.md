@@ -11,7 +11,7 @@ deployqb attempts to solve the copy/paste problem when trying to deploy your fil
  - **deployqb init**        - Run this from the root of your project to initialize the CLI tool.
  - **deployqb feat**        - Run this to deploy your code to Quick Base for the Feature environment. 
  - **deployqb dev**         - Run this to deploy your code to Quick Base for the Development environment. 
- - **deployqb prod**        - Run this to deploy your code to Quick Base for the production environment.
+ - **deployqb prod**        - Run this to deploy your code to Quick Base for the Production environment.
  - **deployqb lfeat**       - Launch the Feature environment in your default browser. 
  - **deployqb ldev**        - Launch the Developer environment in your default browser. 
  - **deployqb lprod**       - Launch the Production environment in your default browser.
@@ -31,6 +31,8 @@ After running "deployqb init" - you will need to update your qbcli.json file tha
 	"prodPrefix": "<your production prefix>",
 	"devPrefix": "<your development prefix>",
 	"dbid": "<your Quick Base dbid>",
+	"devDbid":"<if your dev/prod environments are different Quick Base applications this will be populated>",
+	"devAndProdQuickBaseApplications":"<either 'yes' or 'no' - determines whether dev/prod are diff Quick Base apps>",
 	"realm": "<your Quick Base realm>",
 	"filesConf": [
 		{
@@ -65,7 +67,7 @@ This tool allows you to add dependencies to your files, and the tool will automa
 	<meta  charset="utf-8">
 	<meta  name="viewport"  content="width=device-width,initial-scale=1,shrink-to-fit=no">
 	<title>Demo</title>
-	<link  href="/db/<yourdbid>?a=dbpage&pagename=index.css"  rel="stylesheet">
+	<link  href="?a=dbpage&pagename=index.css"  rel="stylesheet">
 </head>
 <body>
 	<h1>Dummy content</h1>
@@ -75,7 +77,7 @@ This tool allows you to add dependencies to your files, and the tool will automa
 
 You can see the following dependency:
 
-```/db/<yourdbid>?a=dbpage&pagename=index.css```
+```?a=dbpage&pagename=index.css```
 
 Notice the dependency is set up as if it was in Quick Base already and notice the name of the dependency **matches** the name in the qbcli.json above "index.css."  Dependencies in this tool assume you are linking to other dbpages (pagename=nameofyourdependency).  Note, **do not utilize** pageid when linking to your dependencies using this tool - or the system will not operate appropriately you must use pagename (pagename=main.css etc.).  Use the command **"deployqb genlinks"** to see a list of possible links you can use for your dependencies based on your configurations in your qbcli.json filesConf array.
 
