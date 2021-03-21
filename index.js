@@ -30,7 +30,6 @@ const configurationFile = new Configstore(pkg.name);
 
 //load enums/commands
 const ENUMS = require('./lib/enums');
-
 /**
  * Runs the main logic for the CLI Script
  */
@@ -82,6 +81,24 @@ const run = async () => {
         } catch (error) {
             alert.error('Error setting user token.  If you are on Linux - you may need to install "libsecret" - see documentation https://www.npmjs.com/package/keytar');
             alert.error(error);
+        }
+
+        //set development user and app tokens
+        if( input.devAndProdQuickBaseApplications === "yes" ) {
+            //set usertoken and app token in secure storage
+            try {
+                const setUserToken = await keytar.setPassword(ENUMS.DEPLOYQB_NAME, `${repositoryId}utd`, input.devUsertoken);
+            } catch (error) {
+                alert.error('Error setting user token.  If you are on Linux - you may need to install "libsecret" - see documentation https://www.npmjs.com/package/keytar');
+                alert.error(error);
+            }
+
+            try {
+                const setAppToken = await keytar.setPassword(ENUMS.DEPLOYQB_NAME, `${repositoryId}atd`, input.devApptoken);
+            } catch (error) {
+                alert.error('Error setting user token.  If you are on Linux - you may need to install "libsecret" - see documentation https://www.npmjs.com/package/keytar');
+                alert.error(error);
+            }
         }
         
         
@@ -207,18 +224,21 @@ const run = async () => {
         /*
             Add files to QB
         */
+        //determine if there is a qb deployment application different from production
+        var shouldDeployToDifferentQBAppForDevelopmentAndFeature = ((deploymentType === "dev" || deploymentType === 'feat') && existingQbCliConfigs.devAndProdQuickBaseApplications === "yes") ? true : false;
 
         //decrypt usertoken and password
+        var userTokenLocation = shouldDeployToDifferentQBAppForDevelopmentAndFeature ? `${repositoryId}utd` : `${repositoryId}ut`; 
         try {
-            var usertoken = await keytar.getPassword(ENUMS.DEPLOYQB_NAME, `${repositoryId}ut`);
+            var usertoken = await keytar.getPassword(ENUMS.DEPLOYQB_NAME, userTokenLocation);
         } catch (error) {
             alert.error('Error getting user token.  If you are on Linux - you may need to install "libsecret" - see documentation https://www.npmjs.com/package/keytar');
             alert.error(error);
             return;
         }
-
+        var appTokenLocation = shouldDeployToDifferentQBAppForDevelopmentAndFeature ? `${repositoryId}atd` : `${repositoryId}at`; 
         try {
-            var apptoken = await keytar.getPassword(ENUMS.DEPLOYQB_NAME, `${repositoryId}at`);
+            var apptoken = await keytar.getPassword(ENUMS.DEPLOYQB_NAME, appTokenLocation);
         } catch (error) {
             alert.error('Error getting user token.  If you are on Linux - you may need to install "libsecret" - see documentation https://www.npmjs.com/package/keytar');
             alert.error(error);
@@ -231,13 +251,14 @@ const run = async () => {
             return;
         }
 
+
         //start spinner
         const status = new Spinner('Processing request, please wait...');
         status.start();
 
         //get all promises for API calls.
         var allPromises = helpers.generateAllAPICallPromises({
-                dbid: existingQbCliConfigs.dbid,
+                dbid: shouldDeployToDifferentQBAppForDevelopmentAndFeature ? existingQbCliConfigs.devDbid : existingQbCliConfigs.dbid,
                 realm: existingQbCliConfigs.realm,
                 apptoken,
                 usertoken
@@ -310,6 +331,7 @@ const run = async () => {
         var repositoryId = null;
         var qbCLIConfigs = null;
         var queryString  = null;
+        var launchDbid = null;
 
         //make sure user is running this from the root of their react directory
         if ( !qbCliJsonExists ) {
@@ -323,12 +345,23 @@ const run = async () => {
 
         //set correct pageID for prod/dev/feat
         if (args._.includes(ENUMS.LAUNCH_PROD_CMD) ) {
+            launchDbid = existingQbCliConfigs.dbid;
             pageId = existingQbCliConfigs.launchProdPageId;
             errorMessage = 'You must first deploy the production files to the Quick Base application before you can use this command.  Try running "deployqb prod" first.  If you have done that, then you need to set an "isIndexFile" in your qbcli.json to use this command (see npm docs).';
         } else if (args._.includes(ENUMS.LAUNCH_DEV_CMD) ) {
+            if( existingQbCliConfigs.devAndProdQuickBaseApplications === "yes" ) {
+                launchDbid = existingQbCliConfigs.devDbid;
+            } else {
+                launchDbid = existingQbCliConfigs.dbid;
+            }
             pageId = existingQbCliConfigs.launchDevPageId;
             errorMessage = 'You must first deploy the development files to the Quick Base application before you can use this command.  Try running "deployqb dev" first. If you have done that, then you need to set an "isIndexFile" in your qbcli.json to use this command (see npm docs).';
         } else if (args._.includes(ENUMS.LAUNCH_FEAT_CMD)) {
+            if( existingQbCliConfigs.devAndProdQuickBaseApplications === "yes" ) {
+                launchDbid = existingQbCliConfigs.devDbid;
+            } else {
+                launchDbid = existingQbCliConfigs.dbid;
+            }
             const configs = configurationFile.get(repositoryId);
             pageId = configs.launchFeatPageId;
             errorMessage = 'You must first deploy the feature files to the Quick Base application before you can use this command.  Try running "deployqb feat" first. If you have done that, then you need to set an "isIndexFile" in your qbcli.json to use this command (see npm docs).';
@@ -344,7 +377,12 @@ const run = async () => {
             alert.error('Project may never have been initialized - please run deployqb init.');
             return;
         }
-        const { dbid, realm } = existingQbCliConfigs;
+
+        //determine if there is a qb deployment application different from production
+        var shouldDeployToDifferentQBAppForDevelopmentAndFeature = ((deploymentType === "dev" || deploymentType === 'feat') && existingQbCliConfigs.devAndProdQuickBaseApplications === "yes") ? true : false;
+
+        const { realm } = existingQbCliConfigs;
+
 
         //add optional query string if present from qbcli.json
         if( queryString ) {
@@ -354,7 +392,7 @@ const run = async () => {
         }
 
         //launch the webpage
-        opn(`https://${realm}.quickbase.com/db/${dbid}?a=dbpage&pageID=${pageId}${queryString}`);
+        opn(`https://${realm}.quickbase.com/db/${launchDbid}?a=dbpage&pageID=${pageId}${queryString}`);
     } else if (args._.includes(ENUMS.DEPLOYQB_HELP)) {
         alert.success('deployqb commands');
         console.log('init:        Initializes this project.');
